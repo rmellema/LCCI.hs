@@ -4,7 +4,9 @@ An implementation of the famous Hex model in LCCI.
 module Hex where
 import qualified Data.Map as Map
 import qualified Data.Set as Set
+import Issue
 import Model
+import Relation
 import Syntax
 
 -- | The worlds in the Hex model
@@ -61,35 +63,34 @@ v = Map.fromList
     , (w6, Set.fromList [a2, b1, c0])
     ]
 
--- | The StateMaps for the various actions
-s :: Map.Map Atomic StateMap
-s = Map.fromList
-    [ (a, Map.fromList
-        [ (w1, issue [state [w1], state [w2]])
-        , (w2, issue [state [w1], state [w2]])
-        , (w3, issue [state [w3], state [w4]])
-        , (w4, issue [state [w3], state [w4]])
-        , (w5, issue [state [w5], state [w6]])
-        , (w6, issue [state [w5], state [w6]])
+r :: Map.Map Atomic Relation
+r = Map.fromList
+    [ (a, Relation.fromList
+        [ (state [w1], state [w1]), (state [w1], state [w2])
+        , (state [w2], state [w1]), (state [w2], state [w2])
+        , (state [w3], state [w3]), (state [w3], state [w4])
+        , (state [w4], state [w3]), (state [w4], state [w4])
+        , (state [w5], state [w5]), (state [w5], state [w6])
+        , (state [w6], state [w5]), (state [w6], state [w6])
         ])
-    , (b, Map.fromList
-        [ (w1, issue [state [w1], state [w6]])
-        , (w2, issue [state [w2], state [w4]])
-        , (w3, issue [state [w3], state [w5]])
-        , (w4, issue [state [w2], state [w4]])
-        , (w5, issue [state [w3], state [w5]])
-        , (w6, issue [state [w1], state [w6]])
+    , (b, Relation.fromList
+        [ (state [w1], state [w1]), (state [w1], state [w6])
+        , (state [w2], state [w2]), (state [w2], state [w4])
+        , (state [w3], state [w3]), (state [w3], state [w5])
+        , (state [w4], state [w2]), (state [w4], state [w4])
+        , (state [w5], state [w5]), (state [w5], state [w3])
+        , (state [w6], state [w1]), (state [w6], state [w6])
         ])
-    , (c, Map.fromList
-        [ (w1, issue [state [w1], state [w3]])
-        , (w2, issue [state [w2], state [w5]])
-        , (w3, issue [state [w1], state [w3]])
-        , (w4, issue [state [w4], state [w6]])
-        , (w5, issue [state [w2], state [w5]])
-        , (w6, issue [state [w4], state [w6]])
+    , (c, Relation.fromList
+        [ (state [w1], state [w1]), (state [w1], state [w3])
+        , (state [w2], state [w2]), (state [w2], state [w5])
+        , (state [w3], state [w3]), (state [w3], state [w1])
+        , (state [w4], state [w4]), (state [w4], state [w6])
+        , (state [w5], state [w5]), (state [w5], state [w2])
+        , (state [w6], state [w6]), (state [w6], state [w4])
         ])
     ]
 
 -- | The actual model
-m :: Model
-m = Model ws v s
+m :: StaticModel
+m = StaticModel ws v r
