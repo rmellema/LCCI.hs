@@ -2,61 +2,62 @@
 This module holds the code for the evaluation of LCCI formulas in models.
 -}
 module Evaluation (
-    stateMap,
+    compoundRelation,
+    compoundRelation',
     supports,
 ) where
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Data.Maybe (fromMaybe)
 
+import Issue
 import Model
+import Relation
 import Syntax
 
-all' :: Set.Set Bool -> Bool
-all' = Set.foldr (&&) True
+compoundRelation' :: StaticModel -> Program -> Relation
+compoundRelation' m (Atom a) = fromMaybe (error msg) (Map.lookup a (relation m))
+    where msg = "Atomic relations for '" ++ show a ++ "' not given!"
+compoundRelation' m (Test f) = Set.foldl fold Relation.empty ss
+    where ss = powerset $ worlds m
+          f' = expand f
+          test s = supports' m s f' && not (Set.null s)
+          fold r s = if test s then Relation.insert r s s else r
+compoundRelation' m (Sequence p1 p2) = compose (cr p1) (cr p2)
+    where cr = compoundRelation' m
+compoundRelation' m (Choice p1 p2) = cr p1 `union` cr p2
+    where cr = compoundRelation' m
+compoundRelation' m (Iterate p) = reflexiveTransitiveClosure $ compoundRelation' m p
+    where reflexiveTransitiveClosure = reflexiveClosure . transitiveClosure
 
-errMsg :: Atomic -> World -> String
-errMsg a w = "Issue for program " ++ show a ++ " from " ++ show w ++ " undefined"
 
-lookupWorld :: (World -> String) -> Maybe StateMap -> World -> Issue
-lookupWorld f (Just s) w = fromMaybe (error $ f w) (Map.lookup w s)
-lookupWorld f Nothing w = error $ f w
+compoundRelation :: StaticModel -> Program -> State -> Set.Set State
+compoundRelation m (Atom a) s = Relation.lookup (compoundRelation' m (Atom a)) s
+compoundRelation m (Test f) s
+    | supports m s f = Set.singleton s
+    | otherwise = Set.empty
+compoundRelation m (Sequence p1 p2) s = union' $ Set.map seq $ compoundRelation m p1 s
+    where seq = compoundRelation m p2
+          union' = Set.foldr Set.union Set.empty
+compoundRelation m (Choice p1 p2) s = Set.union (cr p1) (cr p2)
+    where cr p = compoundRelation m p s
+compoundRelation m (Iterate p) s = Relation.lookup r s
+    where r = compoundRelation' m p
 
-union :: (Ord a) => Set.Set (Set.Set a) -> Set.Set a
-union = Set.unions . Set.elems
+union' :: Set.Set State -> State
+union' = Set.foldr Set.union Set.empty
 
-iterMap :: Model -> Issue -> Program -> [(World, State)] -> Set.Set (World, State) -> Issue
-iterMap _ acc _ []  _ = acc
-iterMap m acc p ((w, s) : ws) ds = iterMap m acc' p ws' ds'
-    where acc' = Set.union acc ts
-          ws'  = filter (\x -> not $ Set.member x ds') $ concat $ Set.elems $ Set.map (\t -> Set.elems $ Set.map (\v -> (v, t)) t) ts
-          ds'  = Set.insert (w, s) ds
-          ts   = stateMap m p w s
-
-stateMap :: Model -> Program -> World -> State -> Issue
-stateMap m (Atom a) w _ = lookupWorld (errMsg a) (Map.lookup a (stateMaps m)) w
-stateMap m (Test f) w s
-    | supports m s f = issue [s]
-    | otherwise    = error (show f ++ " not supported in " ++ showState s)
-stateMap m (Sequence p1 p2) w s = union $ Set.map (\v -> stateMap m p2 v sp1) sp1
-    where sp1 = union $ stateMap m p1 w s
-stateMap m (Choice p1 p2) w s = Set.union (stateMap m p1 w s) (stateMap m p2 w s)
-stateMap m (Iterate p) w s = iterMap m (issue [state [w]]) p [(w, s)] Set.empty
-
-imodal :: Model -> State -> Program -> Formula -> World -> Bool
-imodal m s p f w = all' $ Set.map (\t -> supports m t f) $ stateMap m p w s
-
-supports' :: Model -> State -> Formula -> Bool
-supports' m s (Prop p) = all' $ Set.map lkp s
+supports' :: StaticModel -> State -> Formula -> Bool
+supports' m s (Prop p) = all lkp s
     where lkp w = Set.member p $ Map.findWithDefault Set.empty w (valuation m)
 supports' m s Bot = Set.null s
 supports' m s (And f1 f2) = supports' m s f1 && supports' m s f2
 supports' m s (IOr f1 f2) = supports' m s f1 || supports' m s f2
-supports' m s (Cond f1 f2) = all' $ Set.map cond $ powerset s
+supports' m s (Cond f1 f2) = all cond $ powerset s
     where cond t = not (supports' m t f1) || supports' m t f2
-supports' m s (Modal p f) = all' $ Set.map h s
-    where h w = supports' m (union $ stateMap m p w s) f
-supports' m s (IModal p f) = all' $ Set.map (imodal m s p f) s
+supports' m s (Modal p f) = all (\w -> supports' m (t w) f) s
+    where t w = union' $ compoundRelation m p $ state [w]
+supports' m s (IModal p f) = all (\t -> supports' m t f) $ compoundRelation m p s
 
-supports :: Model -> State -> Formula -> Bool
+supports :: StaticModel -> State -> Formula -> Bool
 supports m s f = supports' m s (expand f)
