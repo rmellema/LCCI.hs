@@ -7,6 +7,7 @@ module Relation (
     empty,
     insert,
     fromList,
+    toList,
     union,
     compose,
     reflexiveClosure,
@@ -14,6 +15,7 @@ module Relation (
     mapDomain,
     lookup,
     isValid,
+    makeKeys,
     makeValid,
 ) where
 import qualified Prelude
@@ -28,9 +30,8 @@ import Issue
 newtype Relation = Relation (Map State (Set State))  deriving (Ord, Eq)
 
 instance Show Relation where
-    show (Relation r) = "{" ++ intercalate (Map.elems $ Map.mapWithKey f r) ++ "}"
-        where f k v = intercalate $ Set.toAscList $ Set.map (showTuple k) v
-              showTuple k v = "(" ++ showState k ++ ", " ++ showState v ++ ")"
+    show r = "{" ++ intercalate (Prelude.map showTuple $ toList r)  ++ "}"
+        where showTuple (k, v) = "(" ++ showState k ++ ", " ++ showState v ++ ")"
               intercalate = List.intercalate ",\n "
 
 null :: Relation -> Bool
@@ -44,7 +45,12 @@ insert (Relation r) s t = Relation (Map.insertWith Set.union s t' r)
     where t' = Set.singleton t
 
 fromList :: [(State, State)] -> Relation
-fromList xs = makeValid $ Prelude.foldr (\ (s, t) r -> insert r s t) empty xs
+fromList xs = makeValid $ makeKeys $ Prelude.foldr f empty xs
+    where f (s, t) r = insert r s t
+
+toList :: Relation -> [(State, State)]
+toList (Relation r) = Map.foldrWithKey f [] r
+    where f k v a = [(k, v') | v' <- Set.elems v] ++ a
 
 union :: Relation -> Relation -> Relation
 union (Relation r1) (Relation r2) = Relation $ Map.unionWith Set.union r1 r2
@@ -59,10 +65,11 @@ reflexiveClosure (Relation r) = Relation $ Map.mapWithKey f r
 
 transitiveClosure :: Relation -> Relation
 transitiveClosure (Relation r) = Relation $ Map.foldrWithKey (\k ks r' ->
-    Map.unionWith Set.union r' $ Map.mapWithKey (\s rs ->
-        if k `Set.member` rs then
-            issue $ Map.keys $ Map.filterWithKey (\t _ -> t `Set.member` ks) r
-        else rs) r) Map.empty r
+    Map.unionWith Set.union r' $ Map.foldrWithKey (\s rs r'' ->
+        Map.insertWith Set.union s (
+            if k `Set.member` rs then
+                issue $ Map.keys $ Map.filterWithKey (\t _ -> t `Set.member` ks) r''
+            else Set.empty) r'') r' r') r r
 
 mapDomain :: (Ord b) => (State -> b) -> Relation -> [b]
 mapDomain f (Relation r) = Map.elems $ Map.mapWithKey (\k _ -> f k) r
@@ -76,7 +83,7 @@ checkEmptySet :: Relation -> Bool
 checkEmptySet r = Prelude.null $ lookup r (state [])
 
 checkEscape :: Relation -> Bool
-checkEscape (Relation r) = any Set.null r
+checkEscape (Relation r) = not $ any Set.null r
 
 checkRelationLeft :: Relation -> Bool
 checkRelationLeft (Relation r) = all isDownwardClosed r
@@ -91,6 +98,11 @@ checkRelation r = checkRelationLeft r && checkRelationRight r
 
 isValid :: Relation -> Bool
 isValid r = checkEmptySet r && checkEscape r && checkRelation r
+
+makeKeys :: Relation -> Relation
+makeKeys (Relation r) = Relation (Map.union r $ Set.foldr f Map.empty keySet)
+    where f s = Map.insert s $ Set.singleton Set.empty
+          keySet = Set.filter (not . Set.null) $ powerset $ Set.unions $ Map.keys r
 
 makeValid :: Relation -> Relation
 makeValid (Relation r) = Relation $ Map.mapWithKey (\ s ts ->
