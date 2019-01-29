@@ -9,9 +9,12 @@ module Syntax (
         Proposition,
         proposition,
         Formula(..),
+        expandStep,
         expand
 ) where
 import Data.Char(toLower, toUpper)
+import Data.List(nub)
+import Util(showWithParen)
 
 -- | An atomic program with no internal structure
 newtype Atomic = Atomic String deriving (Ord, Eq)
@@ -27,16 +30,16 @@ atom (s:ss) = Atomic (toLower s : ss)
 -- | A full program
 data Program = Atom Atomic
              | Test Formula
-             | Sequence Program Program
-             | Choice Program Program
+             | Sequence [Program]
+             | Choice [Program]
              | Iterate Program
     deriving Eq
 
 instance Show Program where
     show (Atom a) = show a
-    show (Test f) = show f ++ "?"
-    show (Sequence p1 p2) = "(" ++ show p1 ++ ";" ++ show p2 ++ ")"
-    show (Choice p1 p2) = "(" ++ show p1 ++ " u " ++ show p2 ++ ")"
+    show (Test f) = '?' : show f
+    show (Sequence ps) = showWithParen "; " ps
+    show (Choice ps) = showWithParen " u " ps
     show (Iterate p) = show p ++ "*"
 
 -- | A Logical Proposition
@@ -53,11 +56,12 @@ proposition (s:ss) = Proposition (toUpper s : ss)
 -- | A Formula in LCCI
 data Formula = Prop Proposition
              | Bot
+             | Top
              | Neg Formula
              | Quest Formula
-             | And Formula Formula
-             | Or Formula Formula
-             | IOr Formula Formula
+             | And [Formula]
+             | Or [Formula]
+             | IOr [Formula]
              | Cond Formula Formula
              | BiCond Formula Formula
              | Modal Program Formula
@@ -67,29 +71,46 @@ data Formula = Prop Proposition
 instance Show Formula where
     show (Prop p) = show p
     show Bot = "_|_"
+    show Top = "T"
     show (Neg f) = "!" ++ show f
     show (Quest f) = "?" ++ show f
-    show (And f1 f2) = "(" ++ show f1 ++ " & " ++ show f2 ++ ")"
-    show (Or f1 f2) = "(" ++ show f1 ++ " | " ++ show f2 ++ ")"
-    show (IOr f1 f2) = "(" ++ show f1 ++ " \\| " ++ show f2 ++ ")"
+    show (And fs) = showWithParen " & " fs
+    show (Or fs) = showWithParen " | " fs
+    show (IOr fs) = showWithParen " \\| " fs
     show (Cond f1 f2) = "(" ++ show f1 ++ " -> " ++ show f2 ++ ")"
     show (BiCond f1 f2) = "(" ++ show f1 ++ " <-> " ++ show f2 ++ ")"
     show (Modal p f) = "[" ++ show p ++ "] " ++ show f
     show (IModal p f) = "[[" ++ show p ++ "]] " ++ show f
 
+-- | Expand the outer part of a formula by replacing the abbreviations. Also
+-- folds together conjunctions inside conjunctions etc.
+expandStep :: Formula -> Formula
+expandStep (Prop p) = Prop p
+expandStep Bot = Bot
+expandStep Top = Neg Bot
+expandStep (Neg f) = Cond f Bot
+expandStep (Quest f) = IOr [f, Neg f]
+expandStep (And []) = Top
+expandStep (And [f]) = expandStep f
+expandStep (And fs) = And (nub $ concatMap unpack fs)
+    where unpack (And subfs) = map expandStep subfs
+          unpack f = [expandStep f]
+expandStep (Or []) = Bot
+expandStep (Or [f]) = expandStep f
+expandStep (Or fs) = Neg $ And $ map Neg fs
+expandStep (IOr []) = Bot
+expandStep (IOr [f]) = expandStep f
+expandStep (IOr fs) = IOr (nub $ concatMap unpack fs)
+    where unpack (IOr subfs) = map expandStep subfs
+          unpack f = [expandStep f]
+expandStep (Cond f g) = Cond (expandStep f) (expandStep g)
+expandStep (BiCond f g) = And [Cond f g, Cond g f]
+expandStep (Modal p f) = Modal p (expandStep f)
+expandStep (IModal p f) = IModal p (expandStep f)
+
 -- | Expand a formula by replacing all of the abbreviations in them.
 expand :: Formula -> Formula
-expand (Prop p) = Prop p
-expand Bot = Bot
-expand (Neg f) = Cond (expand f) Bot
-expand (Quest f) = IOr f' (expand $ Neg f')
-    where f' = f
-expand (And f1 f2) = And (expand f1) (expand f2)
-expand (Or f1 f2) = expand $ Neg (And (Neg (expand f1)) (Neg (expand f2)))
-expand (IOr f1 f2) = IOr (expand f1) (expand f2)
-expand (Cond f1 f2) = Cond (expand f1) (expand f2)
-expand (BiCond f1 f2) = And (Cond f1' f2') (Cond f2' f1')
-    where f1' = expand f1
-          f2' = expand f2
-expand (Modal p f) = Modal p (expand f)
-expand (IModal p f) = IModal p (expand f)
+expand f
+    | f' /= f = expand f'
+    | otherwise = f
+    where f' = expandStep f
