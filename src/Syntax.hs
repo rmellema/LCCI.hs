@@ -10,11 +10,14 @@ module Syntax (
         proposition,
         Formula(..),
         expandStep,
-        expand
+        expand,
+        isDeclarative,
+        resolutions
 ) where
 import Data.Char(toLower, toUpper)
 import Data.List(nub)
-import Util(showWithParen)
+import Data.Maybe (fromJust)
+import Util(permutate, showWithParen)
 
 -- | An atomic program with no internal structure
 newtype Atomic = Atomic String deriving (Ord, Eq)
@@ -114,3 +117,42 @@ expand f
     | f' /= f = expand f'
     | otherwise = f
     where f' = expandStep f
+
+isDeclarativeProgram :: Program -> Bool
+isDeclarativeProgram (Atom _) = True
+isDeclarativeProgram (Test f) = False
+isDeclarativeProgram (Sequence ps) = isDeclarativeProgram $ head ps
+isDeclarativeProgram (Choice ps) = all isDeclarativeProgram ps
+isDeclarativeProgram (Iterate p) = isDeclarativeProgram p
+
+innerIsDeclarative :: Formula -> Bool
+innerIsDeclarative (Prop _) = True
+innerIsDeclarative Bot = True
+innerIsDeclarative (And fs) = all innerIsDeclarative fs
+innerIsDeclarative (IOr _) = False
+innerIsDeclarative (Cond _ f) = innerIsDeclarative f
+innerIsDeclarative (Modal _ _) = True
+innerIsDeclarative (IModal p f) = isDeclarativeProgram p || innerIsDeclarative f
+
+-- | Check if a given formula is declarative
+isDeclarative :: Formula -> Bool
+isDeclarative = innerIsDeclarative . expand
+
+-- | Calculate all the resolutions of a given formula
+calcRes :: Formula -> [Formula]
+calcRes (And fs) = [And ys | ys <- permutate $ map resolutions fs]
+calcRes (IOr fs) = concatMap resolutions fs
+calcRes (Cond a c) = [And [Cond a' (fromJust $ lookup a' f) | a' <- ra] | f <- fs]
+    where ra = resolutions a
+          rc = resolutions c
+          fs = permutate [[(x, y) | y <- rc] | x <- ra]
+calcRes (IModal (Test f) c) = resolutions (Cond f c)
+calcRes (IModal (Sequence ps) f) = resolutions (IModal (head ps) (IModal (Sequence $ tail ps) f))
+calcRes (IModal (Choice ps) f) = resolutions (And [IModal p f | p <- ps])
+calcRes (IModal (Iterate p) f) = undefined
+
+-- | Give the resolutions of a given formula
+resolutions :: Formula -> [Formula]
+resolutions f
+    | isDeclarative f = [f]
+    | otherwise       = calcRes $ expandStep f
