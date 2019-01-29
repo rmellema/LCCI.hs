@@ -26,44 +26,45 @@ import qualified Data.List as List
 import qualified Data.Set as Set
 import Data.Set (Set)
 import Issue
+import Util(showSet)
 
-newtype Relation = Relation (Map State (Set State))  deriving (Ord, Eq)
+newtype Relation a = Relation (Map (State a) (Set (State a)))  deriving (Ord, Eq)
 
-instance Show Relation where
+instance (Show a) => Show (Relation a) where
     show r = "{" ++ intercalate (Prelude.map showTuple $ toList r)  ++ "}"
-        where showTuple (k, v) = "(" ++ showState k ++ ", " ++ showState v ++ ")"
+        where showTuple (k, v) = "(" ++ showSet k ++ ", " ++ showSet v ++ ")"
               intercalate = List.intercalate ",\n "
 
-null :: Relation -> Bool
+null :: Relation a -> Bool
 null (Relation r) = Map.null r
 
-empty :: Relation
+empty :: Relation a
 empty = Relation Map.empty
 
-insert :: Relation -> State -> State -> Relation
+insert :: (Ord a) => Relation a -> State a -> State a -> Relation a
 insert (Relation r) s t = Relation (Map.insertWith Set.union s t' r)
     where t' = Set.singleton t
 
-fromList :: [(State, State)] -> Relation
+fromList :: (Ord a) => [(State a, State a)] -> Relation a
 fromList xs = makeValid $ makeKeys $ Prelude.foldr f empty xs
     where f (s, t) r = insert r s t
 
-toList :: Relation -> [(State, State)]
+toList :: Relation a -> [(State a, State a)]
 toList (Relation r) = Map.foldrWithKey f [] r
     where f k v a = [(k, v') | v' <- Set.elems v] ++ a
 
-union :: Relation -> Relation -> Relation
+union :: (Ord a) => Relation a -> Relation a -> Relation a
 union (Relation r1) (Relation r2) = Relation $ Map.unionWith Set.union r1 r2
 
-compose :: Relation -> Relation -> Relation
+compose :: (Ord a) => Relation a -> Relation a  -> Relation a
 compose (Relation r1) r2 = Map.foldrWithKey f empty r1
     where f k v r = Set.foldr (\s r' -> insert r' k s) r v
 
-reflexiveClosure :: Relation -> Relation
+reflexiveClosure :: (Ord a) => Relation a -> Relation a
 reflexiveClosure (Relation r) = Relation $ Map.mapWithKey f r
     where f k = Set.union (issue [k])
 
-transitiveClosure :: Relation -> Relation
+transitiveClosure :: (Ord a) => Relation a -> Relation a
 transitiveClosure (Relation r) = Relation $ Map.foldrWithKey (\k ks r' ->
     Map.unionWith Set.union r' $ Map.foldrWithKey (\s rs r'' ->
         Map.insertWith Set.union s (
@@ -71,40 +72,40 @@ transitiveClosure (Relation r) = Relation $ Map.foldrWithKey (\k ks r' ->
                 issue $ Map.keys $ Map.filterWithKey (\t _ -> t `Set.member` ks) r''
             else Set.empty) r'') r' r') r r
 
-mapDomain :: (Ord b) => (State -> b) -> Relation -> [b]
+mapDomain :: (Ord b) => (State a -> b) -> Relation a -> [b]
 mapDomain f (Relation r) = Map.elems $ Map.mapWithKey (\k _ -> f k) r
 
-lookup :: Relation -> State -> Set State
+lookup :: (Ord a) => Relation a -> State a -> Set (State a)
 lookup (Relation r) s = unpack $ Map.lookup s r
     where unpack (Just x) = x
           unpack Nothing  = Set.empty
 
-checkEmptySet :: Relation -> Bool
+checkEmptySet :: (Ord a) => Relation a -> Bool
 checkEmptySet r = Prelude.null $ lookup r (state [])
 
-checkEscape :: Relation -> Bool
+checkEscape :: Relation a -> Bool
 checkEscape (Relation r) = not $ any Set.null r
 
-checkRelationLeft :: Relation -> Bool
+checkRelationLeft :: (Ord a) => Relation a -> Bool
 checkRelationLeft (Relation r) = all isDownwardClosed r
 
-checkRelationRight :: Relation -> Bool
+checkRelationRight :: (Ord a) => Relation a -> Bool
 checkRelationRight (Relation r) = and $ Map.mapWithKey check r
     where check k v = and $ Map.mapWithKey (\k' v' ->
                         not (Set.isSubsetOf k k') || Set.isSubsetOf v v') r
 
-checkRelation :: Relation -> Bool
+checkRelation :: (Ord a) => Relation a -> Bool
 checkRelation r = checkRelationLeft r && checkRelationRight r
 
-isValid :: Relation -> Bool
+isValid :: (Ord a) => Relation a -> Bool
 isValid r = checkEmptySet r && checkEscape r && checkRelation r
 
-makeKeys :: Relation -> Relation
+makeKeys :: (Ord a) => Relation a -> Relation a
 makeKeys (Relation r) = Relation (Map.union r $ Set.foldr f Map.empty keySet)
     where f s = Map.insert s $ Set.singleton Set.empty
           keySet = Set.filter (not . Set.null) $ powerset $ Set.unions $ Map.keys r
 
-makeValid :: Relation -> Relation
+makeValid :: (Ord a) => Relation a -> Relation a
 makeValid (Relation r) = Relation $ Map.mapWithKey (\ s ts ->
     downwardClose $ Set.unions $ ts : Map.elems (Map.filterWithKey (\ t us ->
         t `Set.isSubsetOf` s) r)) r
