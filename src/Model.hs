@@ -4,35 +4,62 @@ including the Valuation
 -}
 module Model (
     Valuation,
-    showValuation,
+    showValuationMap,
     showRelation,
     StaticModel(..),
 ) where
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Data.List(intercalate, subsequences)
+import Event
 import Issue
 import Relation
+import Substitution
 import Syntax
+import Util
 
 -- | A valuation for a LCCI model
-type Valuation = Map.Map World (Set.Set Proposition)
+type ValuationMap a = Map.Map (World a) (Set.Set Proposition)
 
-showValuation :: String -> Valuation -> String
-showValuation s = intercalate s . Map.elems . Map.mapWithKey show'
-    where show' k a = "V(" ++ show k ++ ") = " ++ showState a
+type Valuation a = (Proposition -> World a -> Bool)
 
-showRelation :: Map.Map Atomic Relation -> String
+showValuationMap :: (Show a) => String -> ValuationMap a -> String
+showValuationMap s = intercalate s . Map.elems . Map.mapWithKey show'
+    where show' k a = "V(" ++ show k ++ ") = " ++ showSet a
+
+showRelation :: (Show a) => Map.Map Atomic (Relation a) -> String
 showRelation = intercalate "\n" . Map.elems . Map.mapWithKey show'
     where show' k v = "R_{" ++ show k ++ "} = " ++ show v
 
-data StaticModel = StaticModel
-                { worlds :: Set.Set World
-                , valuation :: Valuation
-                , relation :: Map.Map Atomic Relation
+data StaticModel a = StaticModel
+                { worlds :: Set.Set (World a)
+                , valuation :: Valuation a
+                , relation :: Map.Map Atomic (Relation a)
                 }
 
-instance Show StaticModel where
-    show (StaticModel w v r) = "W = " ++ showState w ++ "\n" ++
-                         showValuation "\n" v ++ "\n" ++
+instance (Show a) => Show (StaticModel a) where
+    show (StaticModel w v r) = "W = " ++ showSet w ++ "\n" ++
+                         "V\n" ++
                          showRelation r
+
+data UpdateModel = UpdateModel
+                { events :: Set.Set Event
+                , statemap :: Map.Map Atomic StateMap
+                , precondition :: Map.Map Event Formula
+                , substitutions :: Map.Map Event Substitution
+                }
+
+showPreconditions :: Map.Map Event Formula -> String
+showPreconditions = intercalate "\n" . Map.elems . Map.mapWithKey f
+    where f k v = "pre(" ++ show k ++ ") = " ++ show v
+
+showSubstitutions :: Map.Map Event Substitution -> String
+showSubstitutions = intercalate "\n" . Map.elems . Map.mapWithKey f
+    where f k v = "sub(" ++ show k ++ ") = " ++ show v
+
+instance Show UpdateModel where
+    show (UpdateModel es s pre sub) = "E = " ++ showSet es ++ "\n" ++
+                                      showStateMaps "" s ++ "\n" ++
+                                      showPreconditions pre ++ "\n" ++
+                                      showSubstitutions sub
+
