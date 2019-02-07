@@ -15,7 +15,7 @@ import Model
 import Relation
 import Syntax
 
-compoundRelation' :: StaticModel -> Program -> Relation
+compoundRelation' :: (Ord a) => StaticModel a -> Program -> Relation a
 compoundRelation' m (Atom a) = fromMaybe (error msg) (Map.lookup a (relation m))
     where msg = "Atomic relations for '" ++ show a ++ "' not given!"
 compoundRelation' m (Test f) = Set.foldl fold Relation.empty ss
@@ -23,41 +23,39 @@ compoundRelation' m (Test f) = Set.foldl fold Relation.empty ss
           f' = expand f
           test s = supports' m s f' && not (Set.null s)
           fold r s = if test s then Relation.insert r s s else r
-compoundRelation' m (Sequence p1 p2) = compose (cr p1) (cr p2)
+compoundRelation' m (Sequence ps) = foldr (compose . cr) Relation.empty ps
     where cr = compoundRelation' m
-compoundRelation' m (Choice p1 p2) = cr p1 `union` cr p2
+compoundRelation' m (Choice ps) = foldr (union . cr) Relation.empty ps
     where cr = compoundRelation' m
 compoundRelation' m (Iterate p) = reflexiveTransitiveClosure $ compoundRelation' m p
     where reflexiveTransitiveClosure = reflexiveClosure . transitiveClosure
 
-
-compoundRelation :: StaticModel -> Program -> State -> Set.Set State
+compoundRelation :: (Ord a) => StaticModel a -> Program -> State a -> Set.Set (State a)
 compoundRelation m (Atom a) s = Relation.lookup (compoundRelation' m (Atom a)) s
 compoundRelation m (Test f) s
     | supports m s f = Set.singleton s
     | otherwise = Set.empty
-compoundRelation m (Sequence p1 p2) s = union' $ Set.map seq $ compoundRelation m p1 s
-    where seq = compoundRelation m p2
-          union' = Set.foldr Set.union Set.empty
-compoundRelation m (Choice p1 p2) s = Set.union (cr p1) (cr p2)
+compoundRelation m (Sequence ps) s = foldr (\p ts -> Set.unions (Set.map (cr p) ts)) (Set.singleton s) ps
+    where cr = compoundRelation m
+compoundRelation m (Choice ps) s = foldr (Set.union . cr) Set.empty ps
     where cr p = compoundRelation m p s
 compoundRelation m (Iterate p) s = Relation.lookup r s
     where r = compoundRelation' m p
 
-union' :: Set.Set State -> State
+union' :: (Ord a) => Set.Set (State a) -> State a
 union' = Set.foldr Set.union Set.empty
 
-supports' :: StaticModel -> State -> Formula -> Bool
-supports' m s (Prop p) = all lkp s
-    where lkp w = Set.member p $ Map.findWithDefault Set.empty w (valuation m)
+supports' :: (Ord a) => StaticModel a -> State a -> Formula -> Bool
+supports' m s (Prop p) = all (val p) s
+    where val = valuation m
 supports' m s Bot = Set.null s
-supports' m s (And f1 f2) = supports' m s f1 && supports' m s f2
-supports' m s (IOr f1 f2) = supports' m s f1 || supports' m s f2
+supports' m s (And fs) = all (supports' m s) fs
+supports' m s (IOr fs) = any (supports' m s) fs
 supports' m s (Cond f1 f2) = all cond $ powerset s
     where cond t = not (supports' m t f1) || supports' m t f2
 supports' m s (Modal p f) = all (\w -> supports' m (t w) f) s
     where t w = union' $ compoundRelation m p $ state [w]
 supports' m s (IModal p f) = all (\t -> supports' m t f) $ compoundRelation m p s
 
-supports :: StaticModel -> State -> Formula -> Bool
+supports :: (Ord a) => StaticModel a -> State a -> Formula -> Bool
 supports m s f = supports' m s (expand f)
