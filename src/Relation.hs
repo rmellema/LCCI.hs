@@ -56,6 +56,7 @@ toList (Relation r) = Map.foldrWithKey f [] r
 union :: (Ord a) => Relation a -> Relation a -> Relation a
 union (Relation r1) (Relation r2) = Relation $ Map.unionWith Set.union r1 r2
 
+-- | Compose two relations together
 compose :: (Ord a) => Relation a -> Relation a  -> Relation a
 compose (Relation r1) r2 = Map.foldrWithKey f empty r1
     where f k v r = Set.foldr (\s r' -> insert r' k s) r v
