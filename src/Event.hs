@@ -15,13 +15,13 @@ instance Show Event where
     show (Event e) = 'e' : show e
 
 -- | A statemap for atomic programs
-type StateMap a = Map.Map Event (Issue a)
+type StateMap = Map.Map Event (Issue Event)
 
-showStateMap :: (Show a) => String -> String -> StateMap a -> String
+showStateMap :: String -> String -> StateMap -> String
 showStateMap i s = intercalate i . Map.elems . Map.mapWithKey show'
     where show' k a = 'S' : s' ++ "(" ++ show k ++ ") = " ++ showIssue a
           s' = if s == "" then "" else '_' : s
 
-showStateMaps :: (Show a) => String -> Map.Map Atomic (StateMap a) -> String
+showStateMaps :: String -> Map.Map Atomic StateMap -> String
 showStateMaps i = intercalate i . Map.elems . Map.mapWithKey show'
     where show' k = showStateMap i (show k)
