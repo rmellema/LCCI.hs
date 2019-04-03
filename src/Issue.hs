@@ -38,7 +38,7 @@ state :: (Ord a) => [World a] -> State a
 state = Set.fromList
 
 -- | A new issue. This will not garantee that an Issue is downward closed.
-type Issue a = Set.Set (State a)
+type Issue a = Set.Set (Set.Set a)
 
 -- | A prettier way to show Issues
 showIssue :: (Show a) => Issue a -> String
@@ -60,7 +60,7 @@ emptyIssue :: Issue a
 emptyIssue = Set.singleton Set.empty
 
 -- | Create an issue from a list of information states
-issue :: (Ord a) => [State a] -> Issue a
+issue :: (Ord a) => [Set.Set a] -> Issue a
 issue [] = emptyIssue
 issue (s : ss) = Set.union s' $ issue ss
     where s' = downwardClose $ Set.singleton s

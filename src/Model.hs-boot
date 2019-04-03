@@ -9,7 +9,9 @@ module Model (
 newtype Event = Event Int
 instance Ord Event
 instance Eq Event
+instance Show Event
 
 data UpdateModel
 
 instance Show UpdateModel
+instance Eq UpdateModel

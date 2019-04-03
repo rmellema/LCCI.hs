@@ -7,7 +7,7 @@ module Model (
     showValuationMap,
     showRelation,
     StaticModel(..),
-    Event,
+    Event(..),
     UpdateModel(..),
 ) where
 import qualified Data.Map.Strict as Map
@@ -56,7 +56,7 @@ data UpdateModel = UpdateModel
                 , statemap :: Map.Map Atomic (StateMap Event)
                 , precondition :: Map.Map Event Formula
                 , substitutions :: Map.Map Event Substitution
-                }
+                } deriving Eq
 
 showPreconditions :: Map.Map Event Formula -> String
 showPreconditions = intercalate "\n" . Map.elems . Map.mapWithKey f
