@@ -7,11 +7,12 @@ module Model (
     showValuationMap,
     showRelation,
     StaticModel(..),
+    Event,
+    UpdateModel(..),
 ) where
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Data.List(intercalate, subsequences)
-import Event
 import Issue
 import Relation
 import Substitution
@@ -52,7 +53,7 @@ instance Show Event where
 
 data UpdateModel = UpdateModel
                 { events :: Set.Set Event
-                , statemap :: Map.Map Atomic StateMap
+                , statemap :: Map.Map Atomic (StateMap Event)
                 , precondition :: Map.Map Event Formula
                 , substitutions :: Map.Map Event Substitution
                 }
