@@ -58,3 +58,7 @@ supports' m s (IModal p f) = all (\t -> supports' m t f) $ compoundRelation m p 
 
 supports :: (Ord a) => StaticModel a -> State a -> Formula -> Bool
 supports m s f = supports' m s (expand f)
+
+infix 9 |=
+(|=) :: (Ord a) => (StaticModel a, State a) -> Formula -> Bool
+(m, s) |= f = supports m s f
