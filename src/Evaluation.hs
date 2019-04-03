@@ -27,8 +27,7 @@ compoundRelation' m (Sequence ps) = foldr (compose . cr) Relation.empty ps
     where cr = compoundRelation' m
 compoundRelation' m (Choice ps) = foldr (union . cr) Relation.empty ps
     where cr = compoundRelation' m
-compoundRelation' m (Iterate p) = reflexiveTransitiveClosure $ compoundRelation' m p
-    where reflexiveTransitiveClosure = reflexiveClosure . transitiveClosure
+compoundRelation' m (Iterate p) = transitiveClosure $ compoundRelation' m p
 
 compoundRelation :: (Ord a) => StaticModel a -> Program -> State a -> Set.Set (State a)
 compoundRelation m (Atom a) s = Relation.lookup (compoundRelation' m (Atom a)) s
