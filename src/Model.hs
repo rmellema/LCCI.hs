@@ -45,6 +45,11 @@ instance (Show a) => Show (StaticModel a) where
                          "V\n" ++
                          showRelation r
 
+newtype Event = Event Int deriving (Ord, Eq)
+
+instance Show Event where
+    show (Event e) = 'e' : show e
+
 data UpdateModel = UpdateModel
                 { events :: Set.Set Event
                 , statemap :: Map.Map Atomic StateMap

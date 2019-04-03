@@ -61,3 +61,15 @@ issue :: (Ord a) => [State a] -> Issue a
 issue [] = emptyIssue
 issue (s : ss) = Set.union s' $ issue ss
     where s' = downwardClose $ Set.singleton s
+
+-- | A statemap for orderable objects
+type StateMap a = Map.Map a (Issue a)
+
+showStateMap :: (Show a) => String -> String -> StateMap a -> String
+showStateMap i s = intercalate i . Map.elems . Map.mapWithKey show'
+    where show' k a = 'S' : s' ++ "(" ++ show k ++ ") = " ++ showIssue a
+          s' = if s == "" then "" else '_' : s
+
+showStateMaps :: (Show a) => String -> Map.Map Atomic (StateMap a) -> String
+showStateMaps i = intercalate i . Map.elems . Map.mapWithKey show'
+    where show' k = showStateMap i (show k)
