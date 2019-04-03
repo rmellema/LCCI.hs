@@ -20,6 +20,7 @@ import Data.Char(toLower, toUpper)
 import Data.List(nub)
 import Data.Maybe (fromJust)
 import Util(permutate, showWithParen)
+import {-# SOURCE #-} Model
 
 -- | A datatype for structures that can be flattened, like programs and formulas
 class (Eq a) => FlattenAble a where
