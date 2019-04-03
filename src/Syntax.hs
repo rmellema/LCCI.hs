@@ -94,6 +94,7 @@ data Formula = Prop Proposition
              | BiCond Formula Formula
              | Modal Program Formula
              | IModal Program Formula
+             | Update (String, UpdateModel) [Event] Formula
     deriving Eq
 
 instance Show Formula where
@@ -109,6 +110,7 @@ instance Show Formula where
     show (BiCond f1 f2) = "(" ++ show f1 ++ " <-> " ++ show f2 ++ ")"
     show (Modal p f) = "[" ++ show p ++ "] " ++ show f
     show (IModal p f) = "[[" ++ show p ++ "]] " ++ show f
+    show (Update (n, _) e f) = "[" ++ n ++ ", " ++ show e ++ "] " ++ show f
 
 instance FlattenAble Formula where
     -- | Flattens a formula by one level
@@ -130,6 +132,7 @@ instance FlattenAble Formula where
     flattenStep (BiCond f1 f2) = BiCond (flattenStep f1) (flattenStep f2)
     flattenStep (Modal p f) = Modal p $ flattenStep f
     flattenStep (IModal p f) = IModal p $ flattenStep f
+    flattenStep (Update m e f) = Update m e $ flattenStep f
     flattenStep f = f
 
 -- | Expand the outer part of a formula by replacing the abbreviations. Also
@@ -153,6 +156,7 @@ expandStep (Cond f g) = Cond (expandStep f) (expandStep g)
 expandStep (BiCond f g) = And [Cond f g, Cond g f]
 expandStep (Modal p f) = Modal p (expandStep f)
 expandStep (IModal p f) = IModal p (expandStep f)
+expandStep (Update m e f) = Update m e $ expandStep f
 
 -- | Expand a formula by replacing all of the abbreviations in them.
 expand :: Formula -> Formula
@@ -176,6 +180,7 @@ innerIsDeclarative (IOr _) = False
 innerIsDeclarative (Cond _ f) = innerIsDeclarative f
 innerIsDeclarative (Modal _ _) = True
 innerIsDeclarative (IModal p f) = isDeclarativeProgram p || innerIsDeclarative f
+innerIsDeclarative (Update _ _ f) = innerIsDeclarative f
 
 -- | Check if a given formula is declarative
 isDeclarative :: Formula -> Bool
@@ -193,6 +198,7 @@ calcRes (IModal (Test f) c) = resolutions (Cond f c)
 calcRes (IModal (Sequence ps) f) = resolutions (IModal (head ps) (IModal (Sequence $ tail ps) f))
 calcRes (IModal (Choice ps) f) = resolutions (And [IModal p f | p <- ps])
 calcRes (IModal (Iterate p) f) = undefined
+calcRes (Update m e f) = [Update m e a | a <- resolutions f]
 
 -- | Give the resolutions of a given formula
 resolutions :: Formula -> [Formula]
