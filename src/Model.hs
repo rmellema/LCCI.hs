@@ -23,6 +23,9 @@ type ValuationMap a = Map.Map (World a) (Set.Set Proposition)
 
 type Valuation a = (Proposition -> World a -> Bool)
 
+valuationFromMap :: (Ord a) => ValuationMap a -> Valuation a
+valuationFromMap m p w = p `Set.member` Map.findWithDefault Set.empty w m
+
 showValuationMap :: (Show a) => String -> ValuationMap a -> String
 showValuationMap s = intercalate s . Map.elems . Map.mapWithKey show'
     where show' k a = "V(" ++ show k ++ ") = " ++ showSet a
