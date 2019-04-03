@@ -6,6 +6,8 @@ module Substitution (
     insert,
     fromList,
     toList,
+    lookup,
+    (!),
 ) where
 import Data.List (intercalate)
 import qualified Data.Map as Map
@@ -42,6 +44,10 @@ toList (Substitution s) = Map.toList s
 
 lookup :: Proposition -> Substitution -> Maybe Formula
 lookup p (Substitution s) = Map.lookup p s
+
+infixl 9 !
+(!) :: Substitution -> Proposition -> Formula
+s ! p = apply p s
 
 apply :: Proposition -> Substitution -> Formula
 apply p s = fromMaybe (Prop p) $ lookup p s
