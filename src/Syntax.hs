@@ -9,6 +9,8 @@ module Syntax (
         Proposition,
         proposition,
         Formula(..),
+        flattenStep,
+        flatten,
         expandStep,
         expand,
         isDeclarative,
@@ -18,6 +20,15 @@ import Data.Char(toLower, toUpper)
 import Data.List(nub)
 import Data.Maybe (fromJust)
 import Util(permutate, showWithParen)
+
+-- | A datatype for structures that can be flattened, like programs and formulas
+class (Eq a) => FlattenAble a where
+    flattenStep :: a -> a
+    flatten :: a -> a
+    flatten f
+        | f' /= f = flatten f'
+        | otherwise = f
+        where f' = flattenStep f
 
 -- | An atomic program with no internal structure
 newtype Atomic = Atomic String deriving (Ord, Eq)
@@ -44,6 +55,19 @@ instance Show Program where
     show (Sequence ps) = showWithParen "; " ps
     show (Choice ps) = showWithParen " u " ps
     show (Iterate p) = show p ++ "*"
+
+instance FlattenAble Program where
+    flattenStep (Atom a) = Atom a
+    flattenStep (Test f) = Test $ flatten f
+    flattenStep (Sequence [p]) = p
+    flattenStep (Sequence ps) = Sequence (nub $ concatMap unpack ps)
+        where unpack (Sequence subps) = map flattenStep ps
+              unpack p = [p]
+    flattenStep (Choice ps) = Choice (nub $ concatMap unpack ps)
+        where unpack (Choice subps) = map flattenStep ps
+              unpack p = [p]
+    flattenStep (Iterate p) = Iterate $ flatten p
+
 
 -- | A Logical Proposition
 newtype Proposition = Proposition String deriving (Ord, Eq)
@@ -85,6 +109,28 @@ instance Show Formula where
     show (Modal p f) = "[" ++ show p ++ "] " ++ show f
     show (IModal p f) = "[[" ++ show p ++ "]] " ++ show f
 
+instance FlattenAble Formula where
+    -- | Flattens a formula by one level
+    flattenStep (Neg f) = Neg $ flattenStep f
+    flattenStep (And []) = Top
+    flattenStep (And [f]) = f
+    flattenStep (And fs) = And (nub $ concatMap unpack fs)
+        where unpack (And subfs) = map flattenStep subfs
+              unpack f = [f]
+    flattenStep (Or []) = Bot
+    flattenStep (Or [f]) = f
+    flattenStep (Or fs) = Or (nub $ concatMap unpack fs)
+        where unpack (Or subfs) = map flattenStep subfs
+              unpack f = [f]
+    flattenStep (IOr fs) = IOr (nub $ concatMap unpack fs)
+        where unpack (IOr subfs) = map flattenStep subfs
+              unpack f = [f]
+    flattenStep (Cond f1 f2) = Cond (flattenStep f1) (flattenStep f2)
+    flattenStep (BiCond f1 f2) = BiCond (flattenStep f1) (flattenStep f2)
+    flattenStep (Modal p f) = Modal p $ flattenStep f
+    flattenStep (IModal p f) = IModal p $ flattenStep f
+    flattenStep f = f
+
 -- | Expand the outer part of a formula by replacing the abbreviations. Also
 -- folds together conjunctions inside conjunctions etc.
 expandStep :: Formula -> Formula
@@ -95,17 +141,13 @@ expandStep (Neg f) = Cond f Bot
 expandStep (Quest f) = IOr [f, Neg f]
 expandStep (And []) = Top
 expandStep (And [f]) = expandStep f
-expandStep (And fs) = And (nub $ concatMap unpack fs)
-    where unpack (And subfs) = map expandStep subfs
-          unpack f = [expandStep f]
+expandStep (And fs) = And (map expandStep fs)
 expandStep (Or []) = Bot
 expandStep (Or [f]) = expandStep f
 expandStep (Or fs) = Neg $ And $ map Neg fs
 expandStep (IOr []) = Bot
 expandStep (IOr [f]) = expandStep f
-expandStep (IOr fs) = IOr (nub $ concatMap unpack fs)
-    where unpack (IOr subfs) = map expandStep subfs
-          unpack f = [expandStep f]
+expandStep (IOr fs) = IOr (map expandStep fs)
 expandStep (Cond f g) = Cond (expandStep f) (expandStep g)
 expandStep (BiCond f g) = And [Cond f g, Cond g f]
 expandStep (Modal p f) = Modal p (expandStep f)
@@ -116,7 +158,7 @@ expand :: Formula -> Formula
 expand f
     | f' /= f = expand f'
     | otherwise = f
-    where f' = expandStep f
+    where f' = expandStep $ flatten f
 
 isDeclarativeProgram :: Program -> Bool
 isDeclarativeProgram (Atom _) = True
