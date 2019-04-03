@@ -187,21 +187,21 @@ isDeclarative :: Formula -> Bool
 isDeclarative = innerIsDeclarative . expand
 
 -- | Calculate all the resolutions of a given formula
-calcRes :: Formula -> [Formula]
-calcRes (And fs) = [And ys | ys <- permutate $ map resolutions fs]
-calcRes (IOr fs) = concatMap resolutions fs
-calcRes (Cond a c) = [And [Cond a' (fromJust $ lookup a' f) | a' <- ra] | f <- fs]
-    where ra = resolutions a
-          rc = resolutions c
+calcRes :: Int -> Formula -> [Formula]
+calcRes n (And fs) = [And ys | ys <- permutate $ map (resolutions n) fs]
+calcRes n (IOr fs) = concatMap (resolutions n) fs
+calcRes n (Cond a c) = [And [Cond a' (fromJust $ lookup a' f) | a' <- ra] | f <- fs]
+    where ra = resolutions n a
+          rc = resolutions n c
           fs = permutate [[(x, y) | y <- rc] | x <- ra]
-calcRes (IModal (Test f) c) = resolutions (Cond f c)
-calcRes (IModal (Sequence ps) f) = resolutions (IModal (head ps) (IModal (Sequence $ tail ps) f))
-calcRes (IModal (Choice ps) f) = resolutions (And [IModal p f | p <- ps])
-calcRes (IModal (Iterate p) f) = undefined
-calcRes (Update m e f) = [Update m e a | a <- resolutions f]
+calcRes n (IModal (Test f) c) = resolutions n (Cond f c)
+calcRes n (IModal (Sequence ps) f) = resolutions n (IModal (head ps) (IModal (Sequence $ tail ps) f))
+calcRes n (IModal (Choice ps) f) = resolutions n (And [IModal p f | p <- ps])
+calcRes n (IModal (Iterate p) f) = resolutions n $ And [IModal (Sequence $ replicate m p) f | m <- [1..(2^n)]]
+calcRes n (Update m e f) = [Update m e a | a <- resolutions n f]
 
 -- | Give the resolutions of a given formula
-resolutions :: Formula -> [Formula]
-resolutions f
+resolutions :: Int -> Formula -> [Formula]
+resolutions n f
     | isDeclarative f = [f]
-    | otherwise       = calcRes $ expandStep f
+    | otherwise       = calcRes n $ expandStep f
