@@ -3,6 +3,7 @@ module Util (
     prettyShowWithParen,
     PrettyShow,
     prettyShow,
+    prettyPrint,
 ) where
 import Data.Foldable
 import Data.List (intercalate)
@@ -20,6 +21,9 @@ prettyShowWithParen i xs = '(' : intercalate i (map prettyShow xs) ++ ")"
 class PrettyShow a where
     prettyShow :: a -> String
 
+instance PrettyShow Bool where
+    prettyShow = show
+
 instance (PrettyShow a, PrettyShow b) => PrettyShow (a, b) where
     prettyShow (a, b) = '(' : prettyShow a ++ ", " ++ prettyShow b ++ ")"
 
@@ -28,3 +32,6 @@ instance (PrettyShow a) => PrettyShow [a] where
 
 instance (PrettyShow a) => PrettyShow (Set.Set a) where
     prettyShow s = "{" ++ intercalate ", " (Set.toAscList $ Set.map prettyShow s) ++ "}"
+
+prettyPrint :: (PrettyShow a) => a -> IO ()
+prettyPrint = putStrLn . prettyShow
