@@ -3,6 +3,9 @@
 -}
 module PrettySyntax where
 import Syntax
+import Evaluation
+import Model
+import Issue
 
 class ProgramLike a where
     asProgram :: a -> Program
@@ -71,3 +74,15 @@ knows p f = Modal (asProgram p) (asFormula f)
 
 entertains :: (ProgramLike a, FormulaLike b) => a -> b -> Formula
 entertains p f = IModal (asProgram p) (asFormula f)
+
+infix 1 @@
+(@@) :: (Ord a) => StaticModel a -> UpdateModel -> StaticModel (World a, Event)
+(@@) = productUpdate
+
+infix 1 .@
+(.@) :: (Ord a) => (StaticModel a, State a) -> (UpdateModel, [Event]) -> State (World a, Event)
+(.@) (m, s) (u, es) = updatedState m s u es
+
+infix 9 |=
+(|=) :: (Ord a) => (StaticModel a, State a) -> Formula -> Bool
+(m, s) |= f = supports m s f

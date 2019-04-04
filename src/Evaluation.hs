@@ -4,9 +4,9 @@ This module holds the code for the evaluation of LCCI formulas in models.
 module Evaluation (
     compoundRelation,
     compoundRelation',
-    supports, (|=),
-    productUpdate, (@@),
-    updatedState, (.@),
+    supports,
+    productUpdate,
+    updatedState,
 ) where
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
@@ -75,22 +75,14 @@ productUpdate :: (Ord a) => StaticModel a -> UpdateModel -> StaticModel (World a
 productUpdate m u = StaticModel ws v r
     where ws = Set.fromList [World (w, e) | w <- Set.toList $ worlds m,
                                       e <- Set.toList $ events u,
-                                    (m, state [w]) |= pre u e]
-          v p (World (w, e)) = (m, state [w]) |= (sub u e ! p)
+                                    supports m (state [w]) $ pre u e]
+          v p (World (w, e)) = supports m (state [w]) (sub u e ! p)
           r = Map.fromList [(a, relUpdate ws a m u) | a <- Map.keys (relation m)]
-
-infix 1 @@
-(@@) :: (Ord a) => StaticModel a -> UpdateModel -> StaticModel (World a, Event)
-(@@) = productUpdate
 
 updatedState :: (Ord a) => StaticModel a -> State a -> UpdateModel -> [Event] -> State (World a, Event)
 updatedState m s u es = state [World (w, e) | w <- Set.toList $worlds m,
                                        e <- es,
-                                        (m, state[w]) |= pre u e]
-
-infix 1 .@
-(.@) :: (Ord a) => (StaticModel a, State a) -> (UpdateModel, [Event]) -> State (World a, Event)
-(.@) (m, s) (u, es) = updatedState m s u es
+                                        supports m (state[w]) $ pre u e]
 
 supports' :: (Ord a) => StaticModel a -> State a -> Formula -> Bool
 supports' m s (Prop p) = all (val p) s
@@ -103,11 +95,8 @@ supports' m s (Cond f1 f2) = all cond $ powerset s
 supports' m s (Modal p f) = all (\w -> supports' m (t w) f) s
     where t w = union' $ compoundRelation m p $ state [w]
 supports' m s (IModal p f) = all (\t -> supports' m t f) $ compoundRelation m p s
-supports' m s (Update (_, u) es f) = (m @@ u, (m, s) .@ (u, es)) |= f
+supports' m s (Update (_, u) es f) =
+                supports (productUpdate m u) (updatedState m s u es) f
 
 supports :: (Ord a) => StaticModel a -> State a -> Formula -> Bool
 supports m s f = supports' m s (expand f)
-
-infix 9 |=
-(|=) :: (Ord a) => (StaticModel a, State a) -> Formula -> Bool
-(m, s) |= f = supports m s f
