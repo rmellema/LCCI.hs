@@ -27,13 +27,13 @@ import qualified Data.List as List
 import qualified Data.Set as Set
 import Data.Set (Set)
 import Issue
-import Util(showSet)
+import Util(PrettyShow, prettyShow)
 
-newtype Relation a = Relation (Map (State a) (Set (State a)))  deriving (Ord, Eq)
+newtype Relation a = Relation (Map (State a) (Set (State a)))  deriving (Ord, Eq, Show)
 
-instance (Show a, Ord a) => Show (Relation a) where
-    show r = "{" ++ intercalate (Prelude.map showTuple $ minNeed r) ++"}"
-        where showTuple (k, v) = "(" ++ showSet k ++ ", " ++ showSet v ++ ")"
+instance (PrettyShow a, Ord a) => PrettyShow (Relation a) where
+    prettyShow r = "{" ++ intercalate (Prelude.map showTuple $ minNeed r) ++"}"
+        where showTuple (k, v) = "(" ++ prettyShow k ++ ", " ++ prettyShow v ++ ")"
               intercalate = List.intercalate ",\n "
               minNeed r = concatMap makeAlts singeltons
               makeAlts k = [(k, i') | i' <- alternatives $ lookup r k]

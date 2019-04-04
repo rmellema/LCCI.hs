@@ -1,7 +1,8 @@
 module Util (
     permutate,
     showWithParen,
-    showSet
+    PrettyShow,
+    prettyShow,
 ) where
 import Data.Foldable
 import Data.List (intercalate)
@@ -16,5 +17,11 @@ permutate (xs:xss) = [x:ys | x <- xs, ys <- permutate xss]
 showWithParen :: (Show a) => String -> [a] -> String
 showWithParen i xs = '(' : intercalate i (map show xs) ++ ")"
 
-showSet :: (Show a) => Set.Set a -> String
-showSet s = "{" ++ intercalate ", " (Set.toAscList $ Set.map show s) ++ "}"
+class PrettyShow a where
+    prettyShow :: a -> String
+
+instance (PrettyShow a, PrettyShow b) => PrettyShow (a, b) where
+    prettyShow (a, b) = '(' : prettyShow a ++ ", " ++ prettyShow b ++ ")"
+
+instance (PrettyShow a) => PrettyShow (Set.Set a) where
+    prettyShow s = "{" ++ intercalate ", " (Set.toAscList $ Set.map prettyShow s) ++ "}"

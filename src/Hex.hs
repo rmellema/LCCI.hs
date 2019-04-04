@@ -10,14 +10,19 @@ import Relation
 import Syntax
 import PrettySyntax
 
+instance (Ord a, Ord b, Ord c) => World (a, b, c)
+
+instance (Show a, Show b, Show c) => PrettyShow (a, b, c) where
+    prettyShow (a, b, c) = show a ++ show b ++ show c
+
 -- | The worlds in the Hex model
-w1, w2, w3 :: World (Int, Int, Int)
-w1 = World (0, 1, 2)
-w2 = World (0, 2, 1)
-w3 = World (1, 0, 2)
-w4 = World (1, 2, 0)
-w5 = World (2, 0, 1)
-w6 = World (2, 1, 0)
+w1, w2, w3 :: (Int, Int, Int)
+w1 = (0, 1, 2)
+w2 = (0, 2, 1)
+w3 = (1, 0, 2)
+w4 = (1, 2, 0)
+w5 = (2, 0, 1)
+w6 = (2, 1, 0)
 
 -- | The propositions in the Hex model
 a0, a1, a2, b0, b1, b2, c0, c1, c2 :: Proposition
@@ -56,12 +61,12 @@ b = atom "b"
 c = atom "c"
 
 -- | The set of worlds
-ws :: Set.Set (World (Int, Int, Int))
+ws :: Set.Set (Int, Int, Int)
 ws = Set.fromList [w1, w2, w3, w4, w5, w6]
 
 -- | The valuation of the propositional atoms
 v :: Valuation (Int, Int, Int)
-v p (World (ca, cb, cc)) = show (card' (player p)) == card p
+v p (ca, cb, cc) = show (card' (player p)) == card p
     where card' 'A' = ca
           card' 'B' = cb
           card' 'C' = cc

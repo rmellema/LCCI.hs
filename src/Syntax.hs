@@ -19,7 +19,7 @@ module Syntax (
 import Data.Char(toLower, toUpper)
 import Data.List(nub)
 import Data.Maybe (fromJust)
-import Util(permutate, showWithParen)
+import Util(permutate, showWithParen, PrettyShow, prettyShow)
 import {-# SOURCE #-} Model
 
 -- | A datatype for structures that can be flattened, like programs and formulas
@@ -32,10 +32,10 @@ class (Eq a) => FlattenAble a where
         where f' = flattenStep f
 
 -- | An atomic program with no internal structure
-newtype Atomic = Atomic String deriving (Ord, Eq)
+newtype Atomic = Atomic String deriving (Ord, Eq, Show)
 
-instance Show Atomic where
-    show (Atomic name) = name
+instance PrettyShow Atomic where
+    prettyShow (Atomic name) = name
 
 -- | Create a new atom from a string. The first letter will be lowercased
 atom :: String -> Atomic
@@ -51,7 +51,7 @@ data Program = Atom Atomic
     deriving Eq
 
 instance Show Program where
-    show (Atom a) = show a
+    show (Atom a) = prettyShow a
     show (Test f) = '?' : show f
     show (Sequence ps) = showWithParen "; " ps
     show (Choice ps) = showWithParen " u " ps
@@ -71,10 +71,10 @@ instance FlattenAble Program where
 
 
 -- | A Logical Proposition
-newtype Proposition = Proposition String deriving (Ord, Eq)
+newtype Proposition = Proposition String deriving (Ord, Eq, Show)
 
-instance Show Proposition where
-    show (Proposition name) = name
+instance PrettyShow Proposition where
+    prettyShow (Proposition name) = name
 
 -- | Create a new Proposition from a string. The first letter will be uppercased
 proposition :: String -> Proposition

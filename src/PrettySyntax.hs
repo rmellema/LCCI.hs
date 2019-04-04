@@ -1,11 +1,16 @@
 {-|
  - A module for making the reading and writing of formulas easier
 -}
-module PrettySyntax where
+module PrettySyntax (
+    PrettyShow,
+    prettyShow,
+    module PrettySyntax,
+) where
 import Syntax
 import Evaluation
 import Model
 import Issue
+import Util (PrettyShow, prettyShow)
 
 class ProgramLike a where
     asProgram :: a -> Program
@@ -76,13 +81,13 @@ entertains :: (ProgramLike a, FormulaLike b) => a -> b -> Formula
 entertains p f = IModal (asProgram p) (asFormula f)
 
 infix 1 @@
-(@@) :: (Ord a) => StaticModel a -> UpdateModel -> StaticModel (World a, Event)
+(@@) :: (World a) => StaticModel a -> UpdateModel -> StaticModel (a, Event)
 (@@) = productUpdate
 
 infix 1 .@
-(.@) :: (Ord a) => (StaticModel a, State a) -> (UpdateModel, [Event]) -> State (World a, Event)
+(.@) :: (World a) => (StaticModel a, State a) -> (UpdateModel, [Event]) -> State (a, Event)
 (.@) (m, s) (u, es) = updatedState m s u es
 
 infix 9 |=
-(|=) :: (Ord a) => (StaticModel a, State a) -> Formula -> Bool
+(|=) :: (World a) => (StaticModel a, State a) -> Formula -> Bool
 (m, s) |= f = supports m s f

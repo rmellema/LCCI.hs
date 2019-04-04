@@ -20,36 +20,38 @@ import Syntax
 import Util
 
 -- | A valuation for a LCCI model
-type ValuationMap a = Map.Map (World a) (Set.Set Proposition)
+type ValuationMap a = Map.Map a (Set.Set Proposition)
 
-type Valuation a = (Proposition -> World a -> Bool)
+type Valuation a = (Proposition -> a -> Bool)
 
 valuationFromMap :: (Ord a) => ValuationMap a -> Valuation a
 valuationFromMap m p w = p `Set.member` Map.findWithDefault Set.empty w m
 
 showValuationMap :: (Show a) => String -> ValuationMap a -> String
 showValuationMap s = intercalate s . Map.elems . Map.mapWithKey show'
-    where show' k a = "V(" ++ show k ++ ") = " ++ showSet a
+    where show' k a = "V(" ++ show k ++ ") = " ++ prettyShow a
 
-showRelation :: (Show a, Ord a) => Map.Map Atomic (Relation a) -> String
+showRelation :: (PrettyShow a, Ord a) => Map.Map Atomic (Relation a) -> String
 showRelation = intercalate "\n" . Map.elems . Map.mapWithKey show'
-    where show' k v = "R_{" ++ show k ++ "} = " ++ show v
+    where show' k v = "R_{" ++ show k ++ "} = " ++ prettyShow v
 
 data StaticModel a = StaticModel
-                { worlds :: Set.Set (World a)
+                { worlds :: Set.Set a
                 , valuation :: Valuation a
                 , relation :: Map.Map Atomic (Relation a)
                 }
 
-instance (Show a, Ord a) => Show (StaticModel a) where
-    show (StaticModel w v r) = "W = " ++ showSet w ++ "\n" ++
+instance (World a, PrettyShow a) => PrettyShow (StaticModel a) where
+    prettyShow (StaticModel w v r) = "W = " ++ prettyShow w ++ "\n" ++
                          "V\n" ++
                          showRelation r
 
-newtype Event = Event Int deriving (Ord, Eq)
+newtype Event = Event Int deriving (Ord, Eq, Show)
 
-instance Show Event where
-    show (Event e) = 'e' : show e
+instance PrettyShow Event where
+    prettyShow (Event e) = 'e' : show e
+
+instance (World a, Ord b) => World (a, b)
 
 data UpdateModel = UpdateModel
                 { events :: Set.Set Event
@@ -67,7 +69,7 @@ showSubstitutions = intercalate "\n" . Map.elems . Map.mapWithKey f
     where f k v = "sub(" ++ show k ++ ") = " ++ show v
 
 instance Show UpdateModel where
-    show (UpdateModel es s pre sub) = "E = " ++ showSet es ++ "\n" ++
+    show (UpdateModel es s pre sub) = "E = " ++ prettyShow es ++ "\n" ++
                                       showStateMaps "\n" s ++ "\n" ++
                                       showPreconditions pre ++ "\n" ++
                                       showSubstitutions sub

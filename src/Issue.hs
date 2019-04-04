@@ -22,28 +22,25 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Data.List(intercalate, subsequences)
 import Syntax
-import Util(showSet)
+import Util(PrettyShow, prettyShow)
 
 -- | A world in an LCCI model
-newtype World a = World a deriving (Ord, Eq)
-
-instance (Show a) => Show (World a) where
-    show (World w) = 'w' : show w
+class (Ord a) => World a
 
 -- | An information state
-type State a = Set.Set (World a)
+type State a = Set.Set a
 
 -- | A convience function for defining States. Creates a state with every
 -- world in the input list
-state :: (Ord a) => [World a] -> State a
+state :: (Ord a) => [a] -> State a
 state = Set.fromList
 
 -- | A new issue. This will not garantee that an Issue is downward closed.
 type Issue a = Set.Set (Set.Set a)
 
 -- | A prettier way to show Issues
-showIssue :: (Ord a, Show a) => Issue a -> String
-showIssue s = '{' : intercalate ", " (map showSet s') ++ "}v"
+showIssue :: (PrettyShow a, Ord a) => Issue a -> String
+showIssue s = '{' : intercalate ", " (map prettyShow s') ++ "}v"
     where s' = alternatives s
 
 -- | Create the powerset of a given set.
@@ -75,11 +72,11 @@ alternatives i = Set.toList $ Set.filter (\t -> not $ any (Set.isProperSubsetOf 
 -- | A statemap for orderable objects
 type StateMap a = Map.Map a (Issue a)
 
-showStateMap :: (Ord a, Show a) => String -> String -> StateMap a -> String
+showStateMap :: (Ord a, PrettyShow a) => String -> String -> StateMap a -> String
 showStateMap i s = intercalate i . Map.elems . Map.mapWithKey show'
-    where show' k a = 'S' : s' ++ "(" ++ show k ++ ") = " ++ showIssue a
+    where show' k a = 'S' : s' ++ "(" ++ prettyShow k ++ ") = " ++ showIssue a
           s' = if s == "" then "" else '_' : s
 
-showStateMaps :: (Ord a, Show a) => String -> Map.Map Atomic (StateMap a) -> String
+showStateMaps :: (Ord a, PrettyShow a) => String -> Map.Map Atomic (StateMap a) -> String
 showStateMaps i = intercalate i . Map.elems . Map.mapWithKey show'
     where show' k = showStateMap i (show k)
