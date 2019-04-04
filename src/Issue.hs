@@ -13,6 +13,7 @@ module Issue (
     powerset,
     downwardClose,
     isDownwardClosed,
+    alternatives,
     StateMap,
     showStateMap,
     showStateMaps,
@@ -41,8 +42,9 @@ state = Set.fromList
 type Issue a = Set.Set (Set.Set a)
 
 -- | A prettier way to show Issues
-showIssue :: (Show a) => Issue a -> String
-showIssue s = '{' : intercalate ", " (Set.toAscList $ Set.map showSet s) ++ "}"
+showIssue :: (Ord a, Show a) => Issue a -> String
+showIssue s = '{' : intercalate ", " (map showSet s') ++ "}v"
+    where s' = alternatives s
 
 -- | Create the powerset of a given set.
 powerset :: (Ord a) => Set.Set a -> Set.Set (Set.Set a)
@@ -56,6 +58,7 @@ downwardClose s = Set.foldr Set.union Set.empty $ Set.map powerset s
 isDownwardClosed :: (Ord a) => Issue a -> Bool
 isDownwardClosed i = downwardClose i == i
 
+-- | Creates an empty issue, i.e. an issue that only contains the empty state
 emptyIssue :: Issue a
 emptyIssue = Set.singleton Set.empty
 
@@ -65,14 +68,18 @@ issue [] = emptyIssue
 issue (s : ss) = Set.union s' $ issue ss
     where s' = downwardClose $ Set.singleton s
 
+-- | Find the alternatives in an issue
+alternatives :: (Ord a) => Issue a -> [Set.Set a]
+alternatives i = Set.toList $ Set.filter (\t -> not $ any (Set.isProperSubsetOf t) i) i
+
 -- | A statemap for orderable objects
 type StateMap a = Map.Map a (Issue a)
 
-showStateMap :: (Show a) => String -> String -> StateMap a -> String
+showStateMap :: (Ord a, Show a) => String -> String -> StateMap a -> String
 showStateMap i s = intercalate i . Map.elems . Map.mapWithKey show'
     where show' k a = 'S' : s' ++ "(" ++ show k ++ ") = " ++ showIssue a
           s' = if s == "" then "" else '_' : s
 
-showStateMaps :: (Show a) => String -> Map.Map Atomic (StateMap a) -> String
+showStateMaps :: (Ord a, Show a) => String -> Map.Map Atomic (StateMap a) -> String
 showStateMaps i = intercalate i . Map.elems . Map.mapWithKey show'
     where show' k = showStateMap i (show k)

@@ -7,6 +7,7 @@ module Relation (
     empty,
     insert,
     fromList,
+    keys,
     toList,
     union,
     compose,
@@ -30,10 +31,13 @@ import Util(showSet)
 
 newtype Relation a = Relation (Map (State a) (Set (State a)))  deriving (Ord, Eq)
 
-instance (Show a) => Show (Relation a) where
-    show r = "{" ++ intercalate (Prelude.map showTuple $ toList r)  ++ "}"
+instance (Show a, Ord a) => Show (Relation a) where
+    show r = "{" ++ intercalate (Prelude.map showTuple $ minNeed r) ++"}"
         where showTuple (k, v) = "(" ++ showSet k ++ ", " ++ showSet v ++ ")"
               intercalate = List.intercalate ",\n "
+              minNeed r = concatMap makeAlts singeltons
+              makeAlts k = [(k, i') | i' <- alternatives $ lookup r k]
+              singeltons = filter (\s -> Set.size s == 1) $ keys r
 
 null :: Relation a -> Bool
 null (Relation r) = Map.null r
@@ -55,6 +59,9 @@ toList (Relation r) = Map.foldrWithKey f [] r
 
 union :: (Ord a) => Relation a -> Relation a -> Relation a
 union (Relation r1) (Relation r2) = Relation $ Map.unionWith Set.union r1 r2
+
+keys :: Relation a -> [State a]
+keys (Relation r) = Map.keys r
 
 -- | Compose two relations together
 compose :: (Ord a) => Relation a -> Relation a  -> Relation a

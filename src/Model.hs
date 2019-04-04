@@ -31,7 +31,7 @@ showValuationMap :: (Show a) => String -> ValuationMap a -> String
 showValuationMap s = intercalate s . Map.elems . Map.mapWithKey show'
     where show' k a = "V(" ++ show k ++ ") = " ++ showSet a
 
-showRelation :: (Show a) => Map.Map Atomic (Relation a) -> String
+showRelation :: (Show a, Ord a) => Map.Map Atomic (Relation a) -> String
 showRelation = intercalate "\n" . Map.elems . Map.mapWithKey show'
     where show' k v = "R_{" ++ show k ++ "} = " ++ show v
 
@@ -41,7 +41,7 @@ data StaticModel a = StaticModel
                 , relation :: Map.Map Atomic (Relation a)
                 }
 
-instance (Show a) => Show (StaticModel a) where
+instance (Show a, Ord a) => Show (StaticModel a) where
     show (StaticModel w v r) = "W = " ++ showSet w ++ "\n" ++
                          "V\n" ++
                          showRelation r
@@ -68,7 +68,7 @@ showSubstitutions = intercalate "\n" . Map.elems . Map.mapWithKey f
 
 instance Show UpdateModel where
     show (UpdateModel es s pre sub) = "E = " ++ showSet es ++ "\n" ++
-                                      showStateMaps "" s ++ "\n" ++
+                                      showStateMaps "\n" s ++ "\n" ++
                                       showPreconditions pre ++ "\n" ++
                                       showSubstitutions sub
 
