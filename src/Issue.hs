@@ -79,4 +79,4 @@ showStateMap i s = intercalate i . Map.elems . Map.mapWithKey show'
 
 showStateMaps :: (Ord a, PrettyShow a) => String -> Map.Map Atomic (StateMap a) -> String
 showStateMaps i = intercalate i . Map.elems . Map.mapWithKey show'
-    where show' k = showStateMap i (show k)
+    where show' k = showStateMap i (prettyShow k)

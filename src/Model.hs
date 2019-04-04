@@ -33,13 +33,16 @@ showValuationMap s = intercalate s . Map.elems . Map.mapWithKey show'
 
 showRelation :: (PrettyShow a, Ord a) => Map.Map Atomic (Relation a) -> String
 showRelation = intercalate "\n" . Map.elems . Map.mapWithKey show'
-    where show' k v = "R_{" ++ show k ++ "} = " ++ prettyShow v
+    where show' k v = "R_{" ++ prettyShow k ++ "} = " ++ prettyShow v
 
 data StaticModel a = StaticModel
                 { worlds :: Set.Set a
                 , valuation :: Valuation a
                 , relation :: Map.Map Atomic (Relation a)
                 }
+
+instance (Show a) => Show (StaticModel a) where
+    show m = "StaticModel " ++ show (worlds m) ++ " undefinedV " ++ show (relation m)
 
 instance (World a, PrettyShow a) => PrettyShow (StaticModel a) where
     prettyShow (StaticModel w v r) = "W = " ++ prettyShow w ++ "\n" ++
@@ -58,18 +61,18 @@ data UpdateModel = UpdateModel
                 , statemap :: Map.Map Atomic (StateMap Event)
                 , precondition :: Map.Map Event Formula
                 , substitutions :: Map.Map Event Substitution
-                } deriving Eq
+                } deriving (Eq, Show)
 
 showPreconditions :: Map.Map Event Formula -> String
 showPreconditions = intercalate "\n" . Map.elems . Map.mapWithKey f
-    where f k v = "pre(" ++ show k ++ ") = " ++ show v
+    where f k v = "pre(" ++ prettyShow k ++ ") = " ++ show v
 
 showSubstitutions :: Map.Map Event Substitution -> String
 showSubstitutions = intercalate "\n" . Map.elems . Map.mapWithKey f
-    where f k v = "sub(" ++ show k ++ ") = " ++ show v
+    where f k v = "sub(" ++ prettyShow k ++ ") = " ++ show v
 
-instance Show UpdateModel where
-    show (UpdateModel es s pre sub) = "E = " ++ prettyShow es ++ "\n" ++
+instance PrettyShow UpdateModel where
+    prettyShow (UpdateModel es s pre sub) = "E = " ++ prettyShow es ++ "\n" ++
                                       showStateMaps "\n" s ++ "\n" ++
                                       showPreconditions pre ++ "\n" ++
                                       showSubstitutions sub
