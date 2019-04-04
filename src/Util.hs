@@ -1,6 +1,6 @@
 module Util (
     permutate,
-    showWithParen,
+    prettyShowWithParen,
     PrettyShow,
     prettyShow,
 ) where
@@ -14,14 +14,17 @@ permutate [] = []
 permutate [xs] = [[x] | x <- xs]
 permutate (xs:xss) = [x:ys | x <- xs, ys <- permutate xss]
 
-showWithParen :: (Show a) => String -> [a] -> String
-showWithParen i xs = '(' : intercalate i (map show xs) ++ ")"
+prettyShowWithParen :: (PrettyShow a) => String -> [a] -> String
+prettyShowWithParen i xs = '(' : intercalate i (map prettyShow xs) ++ ")"
 
 class PrettyShow a where
     prettyShow :: a -> String
 
 instance (PrettyShow a, PrettyShow b) => PrettyShow (a, b) where
     prettyShow (a, b) = '(' : prettyShow a ++ ", " ++ prettyShow b ++ ")"
+
+instance (PrettyShow a) => PrettyShow [a] where
+    prettyShow = show . map prettyShow
 
 instance (PrettyShow a) => PrettyShow (Set.Set a) where
     prettyShow s = "{" ++ intercalate ", " (Set.toAscList $ Set.map prettyShow s) ++ "}"

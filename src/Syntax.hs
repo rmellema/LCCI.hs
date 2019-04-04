@@ -19,7 +19,7 @@ module Syntax (
 import Data.Char(toLower, toUpper)
 import Data.List(nub)
 import Data.Maybe (fromJust)
-import Util(permutate, showWithParen, PrettyShow, prettyShow)
+import Util(permutate, prettyShowWithParen, PrettyShow, prettyShow)
 import {-# SOURCE #-} Model
 
 -- | A datatype for structures that can be flattened, like programs and formulas
@@ -48,14 +48,14 @@ data Program = Atom Atomic
              | Sequence [Program]
              | Choice [Program]
              | Iterate Program
-    deriving Eq
+    deriving (Eq, Show)
 
-instance Show Program where
-    show (Atom a) = prettyShow a
-    show (Test f) = '?' : show f
-    show (Sequence ps) = showWithParen "; " ps
-    show (Choice ps) = showWithParen " u " ps
-    show (Iterate p) = show p ++ "*"
+instance PrettyShow Program where
+    prettyShow (Atom a) = prettyShow a
+    prettyShow (Test f) = '?' : prettyShow f
+    prettyShow (Sequence ps) = prettyShowWithParen "; " ps
+    prettyShow (Choice ps) = prettyShowWithParen " u " ps
+    prettyShow (Iterate p) = prettyShow p ++ "*"
 
 instance FlattenAble Program where
     flattenStep (Atom a) = Atom a
@@ -95,22 +95,22 @@ data Formula = Prop Proposition
              | Modal Program Formula
              | IModal Program Formula
              | Update (String, UpdateModel) [Event] Formula
-    deriving Eq
+    deriving (Eq, Show)
 
-instance Show Formula where
-    show (Prop p) = show p
-    show Bot = "_|_"
-    show Top = "T"
-    show (Neg f) = "!" ++ show f
-    show (Quest f) = "?" ++ show f
-    show (And fs) = showWithParen " & " fs
-    show (Or fs) = showWithParen " | " fs
-    show (IOr fs) = showWithParen " \\| " fs
-    show (Cond f1 f2) = "(" ++ show f1 ++ " -> " ++ show f2 ++ ")"
-    show (BiCond f1 f2) = "(" ++ show f1 ++ " <-> " ++ show f2 ++ ")"
-    show (Modal p f) = "[" ++ show p ++ "] " ++ show f
-    show (IModal p f) = "[[" ++ show p ++ "]] " ++ show f
-    show (Update (n, _) e f) = "[" ++ n ++ ", " ++ show e ++ "] " ++ show f
+instance PrettyShow Formula where
+    prettyShow (Prop p) = prettyShow p
+    prettyShow Bot = "_|_"
+    prettyShow Top = "T"
+    prettyShow (Neg f) = "!" ++ prettyShow f
+    prettyShow (Quest f) = "?" ++ prettyShow f
+    prettyShow (And fs) = prettyShowWithParen " & " fs
+    prettyShow (Or fs) = prettyShowWithParen " | " fs
+    prettyShow (IOr fs) = prettyShowWithParen " \\| " fs
+    prettyShow (Cond f1 f2) = "(" ++ prettyShow f1 ++ " -> " ++ prettyShow f2 ++ ")"
+    prettyShow (BiCond f1 f2) = "(" ++ prettyShow f1 ++ " <-> " ++ prettyShow f2 ++ ")"
+    prettyShow (Modal p f) = "[" ++ prettyShow p ++ "] " ++ prettyShow f
+    prettyShow (IModal p f) = "[[" ++ prettyShow p ++ "]] " ++ prettyShow f
+    prettyShow (Update (n, _) e f) = "[" ++ n ++ ", " ++ prettyShow e ++ "] " ++ prettyShow f
 
 instance FlattenAble Formula where
     -- | Flattens a formula by one level
