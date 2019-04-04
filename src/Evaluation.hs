@@ -80,7 +80,7 @@ productUpdate m u = StaticModel ws v r
           r = Map.fromList [(a, relUpdate ws a m u) | a <- Map.keys (relation m)]
 
 updatedState :: (World a) => StaticModel a -> State a -> UpdateModel -> [Event] -> State (a, Event)
-updatedState m s u es = state [(w, e) | w <- Set.toList $worlds m,
+updatedState m s u es = state [(w, e) | w <- Set.toList s,
                                        e <- es,
                                         supports m (state[w]) $ pre u e]
 
