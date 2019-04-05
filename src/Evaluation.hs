@@ -24,9 +24,7 @@ compoundRelation' m (Atom a) = fromMaybe (error msg) (Map.lookup a (relation m))
     where msg = "Atomic relations for '" ++ show a ++ "' not given!"
 compoundRelation' m (Test f) = Set.foldl fold Relation.empty ss
     where ss = powerset $ worlds m
-          f' = expand f
-          test s = supports' m s f' && not (Set.null s)
-          fold r s = if test s then Relation.insert r s s else r
+          fold r s = Set.foldl (\r' t -> Relation.insert r' s t) r $ compoundRelation m (Test f) s
 compoundRelation' m (Sequence ps) = foldr (compose . cr) Relation.empty ps
     where cr = compoundRelation' m
 compoundRelation' m (Choice ps) = foldr (union . cr) Relation.empty ps
@@ -35,9 +33,7 @@ compoundRelation' m (Iterate p) = transitiveClosure $ compoundRelation' m p
 
 compoundRelation :: (World a) => StaticModel a -> Program -> State a -> Set.Set (State a)
 compoundRelation m (Atom a) s = Relation.lookup (compoundRelation' m (Atom a)) s
-compoundRelation m (Test f) s
-    | supports m s f = Set.singleton s
-    | otherwise = Set.empty
+compoundRelation m (Test f) s = Set.filter (\t -> supports m t f) $ Set.powerSet s
 compoundRelation m (Sequence ps) s = foldr (\p ts -> Set.unions (Set.map (cr p) ts)) (Set.singleton s) ps
     where cr = compoundRelation m
 compoundRelation m (Choice ps) s = foldr (Set.union . cr) Set.empty ps
