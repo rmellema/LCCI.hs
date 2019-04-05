@@ -10,12 +10,12 @@ import Substitution
 import Syntax
 
 -- | Reduce all the formulas in a program to an IE-PDL formula
-pReduce :: Program -> Program
-pReduce (Atom a) = Atom a
-pReduce (Test f) = Test $ reduce f
-pReduce (Sequence ps) = Sequence $ map pReduce ps
-pReduce (Choice ps) = Choice $ map pReduce ps
-pReduce (Iterate p) = Iterate $ pReduce p
+pReduce :: Int -> Program -> Program
+pReduce _ (Atom a) = Atom a
+pReduce n (Test f) = Test $ reduce n f
+pReduce n (Sequence ps) = Sequence $ map (pReduce n) ps
+pReduce n (Choice ps) = Choice $ map (pReduce n) ps
+pReduce n (Iterate p) = Iterate $ pReduce n p
 
 pre :: UpdateModel -> Event -> Formula
 pre u e = precondition u Map.! e
@@ -91,8 +91,8 @@ reduceStep' _ Bot = Bot
 reduceStep' n (And fs) = And $ map (reduceStep' n) fs
 reduceStep' n (IOr fs) = IOr $ map (reduceStep' n) fs
 reduceStep' n (Cond a c) = Cond (reduceStep' n a) (reduceStep' n c)
-reduceStep' n (Modal p f) = Modal (pReduce p) $ reduceStep' n f
-reduceStep' n (IModal p f) = IModal (pReduce p) $ reduceStep' n f
+reduceStep' n (Modal p f) = Modal (pReduce n p) $ reduceStep' n f
+reduceStep' n (IModal p f) = IModal (pReduce n p) $ reduceStep' n f
 reduceStep' n (Update (name, u) es f) = reduceUpdate n name u es f
 
 -- | Set the next step of the reduction from LCCI to IE-PDL
