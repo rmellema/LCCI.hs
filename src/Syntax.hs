@@ -120,7 +120,7 @@ instance FlattenAble Formula where
     flattenStep (And fs) = And (nub $ concatMap unpack fs)
         where unpack (And subfs) = map flattenStep subfs
               unpack f = [f]
-    flattenStep (Or []) = Bot
+    flattenStep (Or []) = Top
     flattenStep (Or [f]) = f
     flattenStep (Or fs) = Or (nub $ concatMap unpack fs)
         where unpack (Or subfs) = map flattenStep subfs

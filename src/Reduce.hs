@@ -2,7 +2,9 @@
  - do not use the Update operator.
  -}
 module Reduce (reduce, reduceStep) where
+import qualified Data.Set as Set
 import qualified Data.Map as Map
+import Data.List (nub)
 import Model
 import Substitution
 import Syntax
@@ -21,15 +23,38 @@ pre u e = precondition u Map.! e
 sub :: UpdateModel -> Event -> Substitution
 sub u e = substitutions u Map.! e
 
-t :: UpdateModel -> [Event] -> [Event] -> Program -> Program
-t um s t (Atom a) = undefined
-t um s t (Test f) = undefined
-t um s t (Sequence ps) = undefined
-t um s t (Choice ps) = undefined
-t um s t (Iterate p) = undefined
+tr :: UpdateModel -> Set.Set Event -> Set.Set Event -> Program -> Program
+tr um s t (Atom a)
+    | t `Set.member` Set.unions (Set.map (\e -> sigma Map.! e) s) =
+        Sequence [Atom a, Test $ flatten $ Or [pre um e | e <- Set.elems t]]
+    | otherwise = Test Bot
+    where sigma = statemap um Map.! a
+tr um s t (Test f)
+    | t `Set.isSubsetOf` s = Test (Update ("", um) (Set.elems s) f)
+    | otherwise = Test Bot
+tr um s t (Sequence [p]) = tr um s t p
+tr um s t (Sequence (p : ps)) =
+        Choice [Sequence [tr um s u p, tr um u t (Sequence ps)] |
+                u <- Set.elems $ Set.powerSet $ events um]
+tr um s t (Choice ps) = Choice [tr um s t p | p <- ps]
+tr um s t (Iterate p) = k um s t (events um) p
 
-k :: UpdateModel -> [Event] -> [Event] -> [Event] -> Program -> Program
-k um s t u p = undefined
+k :: UpdateModel -> Set.Set Event -> Set.Set Event -> Set.Set Event -> Program -> Program
+k um s t u p
+    | Set.null u = tr um s t p
+    | s == t && t == u =
+        Choice [wt $ Iterate $ ku s t (d u e) p | e <- Set.elems u]
+    | s == u = Sequence [Choice [wt $ Iterate $ ku s u (d u e) p | e <- Set.elems u],
+                         Choice [ku u t (d u e) p | e <- Set.elems u]]
+    | u == t = Sequence [Choice [ku s u (d u e) p | e <- Set.elems u],
+                         Choice [wt $ Iterate $ ku s u (d u e) p | e <- Set.elems u]]
+    | otherwise = Choice ([ku s t (d u e) p | e <- Set.elems u] ++ [
+                    Sequence [Choice [ku s u (d u e) p | e <- Set.elems u],
+                              Choice [wt $ Iterate $ ku u u (d u e) p | e <- Set.elems u],
+                              Choice [ku u t (d u e) p | e <- Set.elems u]]])
+    where ku = k um
+          d u e = u `Set.difference` Set.singleton e
+          wt p = Choice [p, Test Top]
 
 reduceUpdate :: Int -> String -> UpdateModel -> [Event] -> Formula -> Formula
 reduceUpdate _ _ u es (Prop p) =
@@ -48,6 +73,12 @@ reduceUpdate n name u es (Cond a c)
     where upd = Update (name, u)
             -- When a is interrogative we want to do one more reduction step so the implication is completely reduced
           reduce' n = if isDeclarative a then reduceStep n else reduceStep n . reduceStep n
+reduceUpdate n name u es (Modal p f) =
+        And $ nub [Modal (tr u es' fs p) $ Update (name, u) es f | fs <- Set.elems $ Set.powerSet $ events u]
+    where es' = Set.fromList es
+reduceUpdate n name u es (IModal p f) =
+        And $ nub [IModal (tr u es' fs p) $ Update (name, u) es f | fs <- Set.elems $ Set.powerSet $ events u]
+    where es' = Set.fromList es
 reduceUpdate n name u es (Update (name', u') es' f) =
         Update (name, u) es $ reduceUpdate n name' u' es' f
 
@@ -68,8 +99,12 @@ reduceStep' n (Update (name, u) es f) = reduceUpdate n name u es f
 reduceStep :: Int -> Formula -> Formula
 reduceStep n = reduceStep' n . expand
 
-reduce' = undefined
+reduce' :: Int -> Formula -> Formula
+reduce' n f
+    | f' /= f = reduce n f'
+    | otherwise = f
+    where f' = reduceStep' n f
 
 -- | Reduce a given LCCI formula to its EI-PDL equivalent
-reduce :: Formula -> Formula
-reduce = reduce' . expand
+reduce :: Int -> Formula -> Formula
+reduce n = reduce' n . expand
