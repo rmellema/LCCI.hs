@@ -44,12 +44,12 @@ player = head . show
 
 -- | Each world as a formula
 a0b1c2, a0b2c1, a1b0c2,a1b2c0,a2b0c1,a2b1c0 :: Formula
-a0b1c2 = a0 & b1 & c2
-a0b2c1 = a0 & b2 & c1
-a1b0c2 = a1 & b0 & c2
-a1b2c0 = a1 & b2 & c0
-a2b0c1 = a2 & b0 & c1
-a2b1c0 = a2 & b1 & c0
+a0b1c2 = a0 /\ b1 /\ c2
+a0b2c1 = a0 /\ b2 /\ c1
+a1b0c2 = a1 /\ b0 /\ c2
+a1b2c0 = a1 /\ b2 /\ c0
+a2b0c1 = a2 /\ b0 /\ c1
+a2b1c0 = a2 /\ b1 /\ c0
 
 -- | A list with all worlds as formulas
 forms = [a0b1c2, a0b2c1, a1b0c2, a1b2c0, a2b0c1, a2b1c0]

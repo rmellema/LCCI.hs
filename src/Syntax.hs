@@ -103,10 +103,10 @@ instance PrettyShow Formula where
     prettyShow Top = "T"
     prettyShow (Neg f) = "!" ++ prettyShow f
     prettyShow (Quest f) = "?" ++ prettyShow f
-    prettyShow (And fs) = prettyShowWithParen " & " fs
-    prettyShow (Or fs) = prettyShowWithParen " | " fs
-    prettyShow (IOr fs) = prettyShowWithParen " \\| " fs
-    prettyShow (Cond f1 f2) = "(" ++ prettyShow f1 ++ " -> " ++ prettyShow f2 ++ ")"
+    prettyShow (And fs) = prettyShowWithParen " /\\ " fs
+    prettyShow (Or fs) = prettyShowWithParen " \\/ " fs
+    prettyShow (IOr fs) = prettyShowWithParen " \\\\/ " fs
+    prettyShow (Cond f1 f2) = "(" ++ prettyShow f1 ++ " --> " ++ prettyShow f2 ++ ")"
     prettyShow (BiCond f1 f2) = "(" ++ prettyShow f1 ++ " <-> " ++ prettyShow f2 ++ ")"
     prettyShow (Modal p f) = "[" ++ prettyShow p ++ "] " ++ prettyShow f
     prettyShow (IModal p f) = "[[" ++ prettyShow p ++ "]] " ++ prettyShow f
