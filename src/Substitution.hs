@@ -20,7 +20,7 @@ import Util
 
 -- | A type for the substitutions
 newtype Substitution = Substitution (Map.Map Proposition Formula)
-    deriving (Eq)
+    deriving (Eq, Show)
 
 instance PrettyShow Substitution where
     prettyShow (Substitution s) = "{" ++ intercalate ", " [g p f | (p, f) <- Map.toList s] ++ "}"
