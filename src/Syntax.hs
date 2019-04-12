@@ -19,7 +19,7 @@ module Syntax (
 import Data.Char(toLower, toUpper)
 import Data.List(nub)
 import Data.Maybe (fromJust)
-import Util(permutate, prettyShowWithParen, PrettyShow, prettyShow)
+import Util
 import {-# SOURCE #-} Model
 
 -- | A datatype for structures that can be flattened, like programs and formulas
@@ -62,10 +62,11 @@ instance FlattenAble Program where
     flattenStep (Test f) = Test $ flatten f
     flattenStep (Sequence [p]) = p
     flattenStep (Sequence ps) = Sequence (nub $ concatMap unpack ps)
-        where unpack (Sequence subps) = map flattenStep ps
+        where unpack (Sequence subps) = map flattenStep subps
               unpack p = [p]
+    flattenStep (Choice [p]) = p
     flattenStep (Choice ps) = Choice (nub $ concatMap unpack ps)
-        where unpack (Choice subps) = map flattenStep ps
+        where unpack (Choice subps) = map flattenStep subps
               unpack p = [p]
     flattenStep (Iterate p) = Iterate $ flatten p
 
