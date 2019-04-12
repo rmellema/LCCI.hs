@@ -31,7 +31,7 @@ test = Test . asFormula
 -- | The sequence operator for programs
 infixl 5 .>
 (.>) :: (ProgramLike a, ProgramLike b) => a -> b -> Program
-p1 .> p2 = flattenStep $ Choice [asProgram p1, asProgram p2]
+p1 .> p2 = flattenStep $ Sequence [asProgram p1, asProgram p2]
 
 -- | The power operator for programs
 infix 4 .^
