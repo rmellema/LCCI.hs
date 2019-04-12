@@ -4,6 +4,8 @@ module Util (
     PrettyShow,
     prettyShow,
     prettyPrint,
+    takeUntil,
+    match,
 ) where
 import Data.Foldable
 import Data.List (intercalate)
@@ -35,3 +37,18 @@ instance (PrettyShow a) => PrettyShow (Set.Set a) where
 
 prettyPrint :: (PrettyShow a) => a -> IO ()
 prettyPrint = putStrLn . prettyShow
+
+-- | Take from a list until a certain predicate `p` holds. This includes the first
+-- element for which the predicate holds.
+takeUntil :: (a -> Bool) -> [a] -> [a]
+takeUntil _ [] = []
+takeUntil p (x:xs)
+    | not $ p x = x : takeUntil p xs
+    | otherwise = [x]
+
+-- | Calculate the matching starts for a list of lists, and return the mathing
+-- start together with the non-matching ends of the lists.
+match :: (Eq a) => [[a]] -> ([a], [[a]])
+match xs = (m, map (drop $ length m) xs)
+    where m = foldr1 f xs
+          f a x = [p1 | (p1, p2) <- zip a x, p1 == p2]

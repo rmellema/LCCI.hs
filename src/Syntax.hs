@@ -11,6 +11,8 @@ module Syntax (
         Formula(..),
         flattenStep,
         flatten,
+        simplifyStep,
+        simplify,
         expandStep,
         expand,
         isDeclarative,
@@ -30,6 +32,18 @@ class (Eq a) => FlattenAble a where
         | f' /= f = flatten f'
         | otherwise = f
         where f' = flattenStep f
+
+-- | A datatype for structures that can be flattenend an simplified, like
+-- programs and formulas.
+class (FlattenAble a) => Simplify a where
+    -- | Simplify the given structure by one step in the simplification process
+    simplifyStep :: a -> a
+    -- | Fully simplify the given structure.
+    simplify :: a -> a
+    simplify x
+        | x' /= x = simplify x'
+        | otherwise = x
+        where x' = simplifyStep $ flatten x
 
 -- | An atomic program with no internal structure
 newtype Atomic = Atomic String deriving (Ord, Eq, Show)
@@ -70,6 +84,21 @@ instance FlattenAble Program where
               unpack p = [p]
     flattenStep (Iterate p) = Iterate $ flatten p
 
+instance Simplify Program where
+    simplifyStep (Test f) = Test $ simplify f
+    simplifyStep (Sequence ps)
+        | Test Bot `elem` ps = Sequence $ takeUntil (== Test Bot) ps
+        | otherwise = Sequence $ map simplifyStep ps
+    simplifyStep (Choice ps)
+        | all isSeq ps && not (null leadSeq) =
+            Sequence (leadSeq ++ [Choice $ map flatten [Sequence ps' | ps' <- tailSeqs]])
+        | otherwise = Choice $ nub $ map simplifyStep ps
+        where isSeq (Sequence _) = True
+              isSeq _            = False
+              matches = match $ map (\(Sequence p) -> p) ps
+              leadSeq = fst matches
+              tailSeqs = snd matches
+    simplifyStep p = p
 
 -- | A Logical Proposition
 newtype Proposition = Proposition String deriving (Ord, Eq, Show)
@@ -135,6 +164,40 @@ instance FlattenAble Formula where
     flattenStep (IModal p f) = IModal p $ flattenStep f
     flattenStep (Update m e f) = Update m e $ flattenStep f
     flattenStep f = f
+
+-- | We can transform a formula into a structuraly similar and logically
+-- equivalent formula.
+instance Simplify Formula where
+    simplifyStep (And fs)
+        | Bot `elem` fs = Bot
+        | Top `elem` fs = flatten $ And $ filter (/=Top) fs
+        | otherwise = flatten $ And $ nub $ map simplifyStep fs
+    simplifyStep (Or fs)
+        | Top `elem` fs = Top
+        | Bot `elem` fs = flatten $ Or $ filter (/= Bot) fs
+        | otherwise = flatten $ Or $ nub $ map simplifyStep fs
+    simplifyStep (IOr fs)
+        | Top `elem` fs = Top
+        | Bot `elem` fs = flatten $ IOr $ filter (/= Bot) fs
+        | otherwise = flatten $ IOr $ nub $ map simplifyStep fs
+    simplifyStep (Cond a c) = Cond (simplifyStep a) (simplifyStep c)
+    simplifyStep (BiCond a c) = BiCond (simplifyStep a) (simplifyStep c)
+    simplifyStep (Modal p@(Sequence ps) f)
+        | last ps == Test Bot = Top
+        | otherwise = Modal (simplifyStep p) (simplifyStep f)
+    simplifyStep (Modal p f)
+        | p == Test Bot = Top
+        | otherwise = Modal (simplifyStep p) (simplifyStep f)
+    simplifyStep (IModal p@(Sequence ps) f)
+        | last ps == Test Bot = Top
+        | otherwise = IModal (simplifyStep p) (simplifyStep f)
+    simplifyStep (IModal p f)
+        | p == Test Bot = Top
+        | otherwise = IModal (simplifyStep p) (simplifyStep f)
+    simplifyStep (Update u e f)
+        | null e = Top
+        | otherwise = Update u e $ simplifyStep f
+    simplifyStep f = f
 
 -- | Expand the outer part of a formula by replacing the abbreviations. Also
 -- folds together conjunctions inside conjunctions etc.
