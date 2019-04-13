@@ -16,7 +16,7 @@ instance (Show a, Show b, Show c) => PrettyShow (a, b, c) where
     prettyShow (a, b, c) = show a ++ show b ++ show c
 
 -- | The worlds in the Hex model
-w1, w2, w3 :: (Int, Int, Int)
+w1, w2, w3, w4, w5, w6 :: (Int, Int, Int)
 w1 = (0, 1, 2)
 w2 = (0, 2, 1)
 w3 = (1, 0, 2)
@@ -36,11 +36,13 @@ c0 = proposition "C0"
 c1 = proposition "C1"
 c2 = proposition "C2"
 
+-- | Get the number of the card for the given proposition.
 card :: Proposition -> String
-card = tail . show
+card = tail . prettyShow
 
+-- | Get the identifier for the player in the given proposition.
 player :: Proposition -> Char
-player = head . show
+player = head . prettyShow
 
 -- | Each world as a formula
 a0b1c2, a0b2c1, a1b0c2,a1b2c0,a2b0c1,a2b1c0 :: Formula
@@ -54,7 +56,7 @@ a2b1c0 = a2 /\ b1 /\ c0
 -- | A list with all worlds as formulas
 forms = [a0b1c2, a0b2c1, a1b0c2, a1b2c0, a2b0c1, a2b1c0]
 
--- | The 'actions' in the Hex model (The knowledge relations)
+-- | The "actions" in the Hex model (The knowledge relations)
 a, b, c :: Atomic
 a = atom "a"
 b = atom "b"
@@ -71,6 +73,7 @@ v p (ca, cb, cc) = show (card' (player p)) == card p
           card' 'B' = cb
           card' 'C' = cc
 
+-- | The relations for all the various agents.
 r :: Map.Map Atomic (Relation (Int, Int, Int))
 r = Map.fromList
     [ (a, Relation.fromList

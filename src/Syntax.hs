@@ -9,8 +9,10 @@ module Syntax (
         Proposition,
         proposition,
         Formula(..),
+        FlattenAble,
         flattenStep,
         flatten,
+        Simplify,
         simplifyStep,
         simplify,
         expandStep,
@@ -26,7 +28,9 @@ import {-# SOURCE #-} Model
 
 -- | A datatype for structures that can be flattened, like programs and formulas
 class (Eq a) => FlattenAble a where
+    -- | Flatten a given structure by one step in the process.
     flattenStep :: a -> a
+    -- | Fully flatten the given structure.
     flatten :: a -> a
     flatten f
         | f' /= f = flatten f'
@@ -229,6 +233,8 @@ expand f
     | otherwise = f
     where f' = expandStep $ flatten f
 
+-- | Returns if a given program is a declarative program, i.e., if `IModal p f`
+-- is declarative for any @f@
 isDeclarativeProgram :: Program -> Bool
 isDeclarativeProgram (Atom _) = True
 isDeclarativeProgram (Test f) = False
@@ -264,7 +270,8 @@ calcRes n (IModal (Choice ps) f) = resolutions n (And [IModal p f | p <- ps])
 calcRes n (IModal (Iterate p) f) = resolutions n $ And [IModal (Sequence $ replicate m p) f | m <- [1..(2^n)]]
 calcRes n (Update m e f) = [Update m e a | a <- resolutions n f]
 
--- | Give the resolutions of a given formula
+-- | Give the resolutions of a given formula for models with at most `Int`
+-- worlds.
 resolutions :: Int -> Formula -> [Formula]
 resolutions n f
     | isDeclarative f = [f]

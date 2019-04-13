@@ -19,6 +19,7 @@ import Relation
 import Substitution hiding (lookup)
 import Syntax
 
+-- | Calculate the compound relation for a given model and program.
 compoundRelation' :: (World a) => StaticModel a -> Program -> Relation a
 compoundRelation' m (Atom a) = fromMaybe (error msg) (Map.lookup a (relation m))
     where msg = "Atomic relations for '" ++ show a ++ "' not given!"
@@ -31,6 +32,8 @@ compoundRelation' m (Choice ps) = foldr (union . cr) Relation.empty ps
     where cr = compoundRelation' m
 compoundRelation' m (Iterate p) = transitiveClosure $ compoundRelation' m p
 
+-- | Calculate all the states that are related to a given state by a program in
+-- the given model.
 compoundRelation :: (World a) => StaticModel a -> Program -> State a -> Set.Set (State a)
 compoundRelation m (Atom a) s = Relation.lookup (compoundRelation' m (Atom a)) s
 compoundRelation m (Test f) s = Set.filter (\t -> supports m t f) $ Set.powerSet s
@@ -67,6 +70,7 @@ relUpdate ws a m u = Relation.fromList
         where ra = relation m Map.! a
               sa = statemap u Map.! a
 
+-- | Update the given @StaticModel m@ with the given @UpdateModel u@.
 productUpdate :: (World a) => StaticModel a -> UpdateModel -> StaticModel (a, Event)
 productUpdate m u = StaticModel ws v r
     where ws = Set.fromList [(w, e) | w <- Set.toList $ worlds m,
@@ -75,6 +79,8 @@ productUpdate m u = StaticModel ws v r
           v p (w, e) = supports m (state [w]) (sub u e ! p)
           r = Map.fromList [(a, relUpdate ws a m u) | a <- Map.keys (relation m)]
 
+-- | Calculate the updated state of @s@ in @m@ under application of events @es@
+-- from model @u@.
 updatedState :: (World a) => StaticModel a -> State a -> UpdateModel -> [Event] -> State (a, Event)
 updatedState m s u es = state [(w, e) | w <- Set.toList s,
                                        e <- es,
@@ -94,5 +100,6 @@ supports' m s (IModal p f) = all (\t -> supports' m t f) $ compoundRelation m p 
 supports' m s (Update (_, u) es f) =
                 supports (productUpdate m u) (updatedState m s u es) f
 
+-- | Check if the given formula is supported in the model and state.
 supports :: (World a) => StaticModel a -> State a -> Formula -> Bool
 supports m s f = supports' m s (expand f)

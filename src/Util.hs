@@ -1,3 +1,7 @@
+{-|
+This Module exports some utility functions that are in use in other parts of the
+project.
+-}
 module Util (
     permutate,
     prettyShowWithParen,
@@ -12,15 +16,20 @@ import Data.List (intercalate)
 import qualified Data.Set as Set
 import Prelude hiding (foldr)
 
+-- | Given a list of lists, calculate all the possible permutations of their
+-- elements. So it picks one element for each list, and then puts that in front
+-- of the permutations of the rest of the lists. This is the same as making a
+-- list comprehension that takes from each list, but for an unknown amount of
+-- lists.
 permutate :: [[a]] -> [[a]]
 permutate [] = []
 permutate [xs] = [[x] | x <- xs]
 permutate (xs:xss) = [x:ys | x <- xs, ys <- permutate xss]
 
-prettyShowWithParen :: (PrettyShow a) => String -> [a] -> String
-prettyShowWithParen i xs = '(' : intercalate i (map prettyShow xs) ++ ")"
-
+-- | A class for objects that can be shown in a "pretty" way, instead of just
+-- in a way that Haskell can read in.
 class PrettyShow a where
+    -- | Show an object in a more human-readable manner
     prettyShow :: a -> String
 
 instance PrettyShow Bool where
@@ -35,10 +44,16 @@ instance (PrettyShow a) => PrettyShow [a] where
 instance (PrettyShow a) => PrettyShow (Set.Set a) where
     prettyShow s = "{" ++ intercalate ", " (Set.toAscList $ Set.map prettyShow s) ++ "}"
 
+-- | Show a list of objects with parenthesis around it. The first argument is
+-- the string that is shown in between the elements of the list
+prettyShowWithParen :: (PrettyShow a) => String -> [a] -> String
+prettyShowWithParen i xs = '(' : intercalate i (map prettyShow xs) ++ ")"
+
+-- | Same as `print`, but using `prettyShow` instead of `show`.
 prettyPrint :: (PrettyShow a) => a -> IO ()
 prettyPrint = putStrLn . prettyShow
 
--- | Take from a list until a certain predicate `p` holds. This includes the first
+-- | Take from a list until a certain predicate @p@ holds. This includes the first
 -- element for which the predicate holds.
 takeUntil :: (a -> Bool) -> [a] -> [a]
 takeUntil _ [] = []

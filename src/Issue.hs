@@ -72,11 +72,15 @@ alternatives i = Set.toList $ Set.filter (\t -> not $ any (Set.isProperSubsetOf 
 -- | A statemap for orderable objects
 type StateMap a = Map.Map a (Issue a)
 
+-- | Turn a statemap into a human readable string. The entries in the statemap
+-- are spereated by the string given in @i@.
 showStateMap :: (Ord a, PrettyShow a) => String -> String -> StateMap a -> String
 showStateMap i s = intercalate i . Map.elems . Map.mapWithKey show'
     where show' k a = 'S' : s' ++ "(" ++ prettyShow k ++ ") = " ++ showIssue a
           s' = if s == "" then "" else '_' : s
 
+-- | Turn a map of statemaps into a human readable string. The elements in the
+-- statemap and between statemaps are seperated by the string @i@.
 showStateMaps :: (Ord a, PrettyShow a) => String -> Map.Map Atomic (StateMap a) -> String
 showStateMaps i = intercalate i . Map.elems . Map.mapWithKey show'
     where show' k = showStateMap i (prettyShow k)
