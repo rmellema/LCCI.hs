@@ -14,6 +14,7 @@ module Util (
 import Data.Foldable
 import Data.List (intercalate)
 import qualified Data.Set as Set
+import qualified Data.Map as Map
 import Prelude hiding (foldr)
 
 -- | Given a list of lists, calculate all the possible permutations of their
@@ -43,6 +44,11 @@ instance (PrettyShow a) => PrettyShow [a] where
 
 instance (PrettyShow a) => PrettyShow (Set.Set a) where
     prettyShow s = "{" ++ intercalate ", " (Set.toAscList $ Set.map prettyShow s) ++ "}"
+
+instance (PrettyShow a, PrettyShow b) => PrettyShow (Map.Map a b) where
+    prettyShow = intercalate "\n" . Map.elems . Map.mapWithKey (\k v ->
+        prettyShow k ++ " |-> " ++ prettyShow v)
+
 
 -- | Show a list of objects with parenthesis around it. The first argument is
 -- the string that is shown in between the elements of the list
