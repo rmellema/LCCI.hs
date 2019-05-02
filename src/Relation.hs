@@ -106,16 +106,22 @@ lookup (Relation r) s = unpack $ Map.lookup s r
 checkEmptySet :: (Ord a) => Relation a -> Bool
 checkEmptySet r = Prelude.null $ lookup r (state [])
 
+-- | Check to see if every state is related to the empty state
 checkEscape :: Relation a -> Bool
 checkEscape (Relation r) = not $ any Set.null r
 
+-- | Check if all the elements in the relation are downward closed.
 checkRelationLeft :: (Ord a) => Relation a -> Bool
 checkRelationLeft (Relation r) = all isDownwardClosed r
 
+-- | Check to see that if a state `s` is related to a state `t`, then there is
+-- a world `w` in `s` such that `w` is related to `t`.
 checkRelationRight :: (Ord a) => Relation a -> Bool
 checkRelationRight (Relation r) = and $ Map.mapWithKey check r
-    where check k v = and $ Map.mapWithKey (\k' v' ->
-                        not (Set.isSubsetOf k k') || Set.isSubsetOf v v') r
+    where check k v
+            | Set.size k == 1 = True
+            | otherwise = and $ Set.map (\s -> or $ Set.map (\w ->
+                    s `Set.member` lookup (Relation r) (state [w])) k) v
 
 checkRelation :: (Ord a) => Relation a -> Bool
 checkRelation r = checkRelationLeft r && checkRelationRight r
@@ -133,6 +139,6 @@ makeKeys (Relation r) = Relation (Map.union r $ Set.foldr f Map.empty keySet)
 
 -- | Make sure that the given relation adheres to all the properties it has to.
 makeValid :: (Ord a) => Relation a -> Relation a
-makeValid (Relation r) = Relation $ Map.mapWithKey (\ s ts ->
-    downwardClose $ Set.unions $ ts : Map.elems (Map.filterWithKey (\ t us ->
-        t `Set.isSubsetOf` s) r)) r
+makeValid (Relation r) = Relation $ Map.mapWithKey (\s ts ->
+    downwardClose $ Set.unions (ts : Set.elems (Set.map (\w ->
+                                     lookup (Relation r) (state [w])) s))) r
