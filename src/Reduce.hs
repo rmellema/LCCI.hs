@@ -5,6 +5,7 @@ module Reduce (reduce, reduceStep) where
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import Data.List (nub)
+import Issue (alternatives)
 import Model
 import Substitution
 import Syntax
@@ -25,10 +26,15 @@ sub u e = substitutions u Map.! e
 
 tr :: UpdateModel -> Set.Set Event -> Set.Set Event -> Program -> Program
 tr um s t (Atom a)
-    | t `Set.member` Set.unions (Set.map (\e -> sigma Map.! e) s) =
-        Sequence [Atom a, Test $ flatten $ Or [pre um e | e <- Set.elems t]]
+    | not $ Set.null ts'=
+        Sequence [Atom a, Test $ flatten $
+            Or [And [Or [pre um e | e <- Set.elems t'],
+                     And [Neg $ pre um e | e <- Set.elems $ Set.difference t t']]
+                | t' <- alternatives ts']]
     | otherwise = Test Bot
     where sigma = statemap um Map.! a
+          smaps = Set.unions (Set.map (\e -> sigma Map.! e) s)
+          ts' = Set.filter (\t' -> t' `Set.member` smaps && (not . Set.null) t') $ Set.powerSet t
 tr um s t (Test f)
     | t `Set.isSubsetOf` s = Test (Update ("", um) (Set.elems s) f)
     | otherwise = Test Bot
