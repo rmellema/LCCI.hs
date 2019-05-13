@@ -81,28 +81,48 @@ instance FlattenAble Program where
     flattenStep (Sequence [p]) = p
     flattenStep (Sequence ps) = Sequence (nub $ concatMap unpack ps)
         where unpack (Sequence subps) = map flattenStep subps
-              unpack p = [p]
+              unpack p = [flattenStep p]
     flattenStep (Choice [p]) = p
     flattenStep (Choice ps) = Choice (nub $ concatMap unpack ps)
         where unpack (Choice subps) = map flattenStep subps
-              unpack p = [p]
+              unpack p = [flattenStep p]
     flattenStep (Iterate p) = Iterate $ flatten p
 
 instance Simplify Program where
+    simplifyStep (Atom a) = Atom a
     simplifyStep (Test f) = Test $ simplify f
     simplifyStep (Sequence ps)
+        -- If this sequence contains ?_|_, then we can stop there.
         | Test Bot `elem` ps = Sequence $ takeUntil (== Test Bot) ps
         | otherwise = Sequence $ map simplifyStep ps
     simplifyStep (Choice ps)
-        | all isSeq ps && not (null leadSeq) =
+        -- Any (sequence that ends with) ?_|_ can be removed, since those don't add anything
+        | any f ps = Choice $ filter (not . f) ps
+        | Test Bot `elem` ps && any (/= Test Bot) ps = Choice $ filter (/= Test Bot) ps
+        -- If we have p u p*, then the first p does not add anything
+        | any (\p -> any (initer p) ps) ps =
+            Choice $ filter (\p -> not $ any (initer p) ps) ps
+        -- If all the starts in the sequence are the same, then we can combine the starts
+        | all isSeq ps && not (null leadSeq) && all (not . null) tailSeqs =
             Sequence (leadSeq ++ [Choice $ map flatten [Sequence ps' | ps' <- tailSeqs]])
+        -- If all the ends in the sequence are the same, then we can combine the ends
+        | all isSeq ps && not (null endSeq) && all (not . null) beginSeqs =
+            Sequence ((Choice $ map flatten [Sequence $ reverse ps' | ps' <- beginSeqs]) : reverse endSeq)
         | otherwise = Choice $ nub $ map simplifyStep ps
         where isSeq (Sequence _) = True
               isSeq _            = False
+              initer p (Iterate p') = p == p'
+              initer _ _ = False
+              f (Sequence ps) = last ps == Test Bot
+              f _ = False
               matches = match $ map (\(Sequence p) -> p) ps
               leadSeq = fst matches
               tailSeqs = snd matches
-    simplifyStep p = p
+              revmatches = match $ map (\(Sequence p) -> reverse p) ps
+              endSeq = fst revmatches
+              beginSeqs = snd revmatches
+    simplifyStep (Iterate (Test f)) = Test f
+    simplifyStep (Iterate p) = Iterate $ simplifyStep p
 
 -- | A Logical Proposition
 newtype Proposition = Proposition String deriving (Ord, Eq, Show)
@@ -153,25 +173,27 @@ instance FlattenAble Formula where
     flattenStep (And [f]) = f
     flattenStep (And fs) = And (nub $ concatMap unpack fs)
         where unpack (And subfs) = map flattenStep subfs
-              unpack f = [f]
+              unpack f = [flattenStep f]
     flattenStep (Or []) = Top
     flattenStep (Or [f]) = f
     flattenStep (Or fs) = Or (nub $ concatMap unpack fs)
         where unpack (Or subfs) = map flattenStep subfs
-              unpack f = [f]
+              unpack f = [flattenStep f]
     flattenStep (IOr fs) = IOr (nub $ concatMap unpack fs)
         where unpack (IOr subfs) = map flattenStep subfs
-              unpack f = [f]
+              unpack f = [flattenStep f]
     flattenStep (Cond f1 f2) = Cond (flattenStep f1) (flattenStep f2)
     flattenStep (BiCond f1 f2) = BiCond (flattenStep f1) (flattenStep f2)
-    flattenStep (Modal p f) = Modal p $ flattenStep f
-    flattenStep (IModal p f) = IModal p $ flattenStep f
+    flattenStep (Modal p f) = Modal (flattenStep p) $ flattenStep f
+    flattenStep (IModal p f) = IModal (flattenStep p) $ flattenStep f
     flattenStep (Update m e f) = Update m e $ flattenStep f
     flattenStep f = f
 
 -- | We can transform a formula into a structuraly similar and logically
 -- equivalent formula.
 instance Simplify Formula where
+    simplifyStep (Neg Bot) = Top
+    simplifyStep (Neg Top) = Bot
     simplifyStep (And fs)
         | Bot `elem` fs = Bot
         | Top `elem` fs = flatten $ And $ filter (/=Top) fs
