@@ -1,7 +1,7 @@
 {-| This module allows for the reduction of formulas to equivalent formulas that
  - do not use the Update operator.
  -}
-module Reduce (reduce, reduceStep) where
+module Reduce (reduce, reduceStep, tr, k) where
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import Data.List (nub)
@@ -49,7 +49,7 @@ k :: UpdateModel -> Set.Set Event -> Set.Set Event -> Set.Set Event -> Program -
 k um s t u p
     | Set.null u = tr um s t p
     | s == t && t == u =
-        Choice [wt $ Iterate $ ku s t (d u e) p | e <- Set.elems u]
+        Choice [Iterate $ ku s t (d u e) p | e <- Set.elems u]
     | s == u = Sequence [Choice [wt $ Iterate $ ku s u (d u e) p | e <- Set.elems u],
                          Choice [ku u t (d u e) p | e <- Set.elems u]]
     | u == t = Sequence [Choice [ku s u (d u e) p | e <- Set.elems u],
