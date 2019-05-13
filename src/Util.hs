@@ -40,7 +40,7 @@ instance (PrettyShow a, PrettyShow b) => PrettyShow (a, b) where
     prettyShow (a, b) = '(' : prettyShow a ++ ", " ++ prettyShow b ++ ")"
 
 instance (PrettyShow a) => PrettyShow [a] where
-    prettyShow = show . map prettyShow
+    prettyShow xs = '[' : intercalate ", " (map prettyShow xs) ++ "]"
 
 instance (PrettyShow a) => PrettyShow (Set.Set a) where
     prettyShow s = "{" ++ intercalate ", " (Set.toAscList $ Set.map prettyShow s) ++ "}"
