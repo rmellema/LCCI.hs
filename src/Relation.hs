@@ -54,6 +54,11 @@ insert :: (Ord a) => Relation a -> State a -> State a -> Relation a
 insert (Relation r) s t = Relation (Map.insertWith Set.union s t' r)
     where t' = Set.singleton t
 
+-- | Read a relation from a given state map
+fromStateMap :: (World a) => StateMap a -> Relation a
+fromStateMap = Relation . Map.foldrWithKey f Map.empty
+    where f k = Map.insert (state [k])
+
 -- | Read a relation from a list of tuples.
 fromList :: (Ord a) => [(State a, State a)] -> Relation a
 fromList xs = makeValid $ makeKeys $ Prelude.foldr f empty xs
