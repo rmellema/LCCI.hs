@@ -74,8 +74,8 @@ keys (Relation r) = Map.keys r
 
 -- | Compose two relations together
 compose :: (Ord a) => Relation a -> Relation a  -> Relation a
-compose (Relation r1) r2 = Map.foldrWithKey f empty r1
-    where f k v r = Set.foldr (\s r' -> insert r' k s) r v
+compose (Relation r1) r2 = Relation $ Map.foldrWithKey f Map.empty r1
+    where f k i r = Set.foldr (Map.insertWith Set.union k) r $ Set.map (lookup r2) i
 
 -- | Take the reflexive closure of this relation.
 reflexiveClosure :: (Ord a) => Relation a -> Relation a
