@@ -121,6 +121,6 @@ reduce' n f
     | otherwise = f
     where f' = reduceStep' n f
 
--- | Reduce a given LCCI formula to its EI-PDL equivalent
+-- | Reduce a given LCCI formula to its IE-PDL equivalent
 reduce :: Int -> Formula -> Formula
 reduce n = reduce' n . expand

@@ -201,6 +201,10 @@ instance FlattenAble Formula where
 instance Simplify Formula where
     simplifyStep (Neg Bot) = Top
     simplifyStep (Neg Top) = Bot
+    simplifyStep (Neg (Neg f))
+        | isDeclarative f = f
+        | otherwise       = Neg $ simplifyStep $ Neg f
+    simplifyStep (Neg f  ) = Neg $ simplifyStep f
     simplifyStep (And fs)
         | Bot `elem` fs = Bot
         | Top `elem` fs = flatten $ And $ filter (/=Top) fs
@@ -213,6 +217,7 @@ instance Simplify Formula where
         | Top `elem` fs = Top
         | Bot `elem` fs = flatten $ IOr $ filter (/= Bot) fs
         | otherwise = flatten $ IOr $ nub $ map simplifyStep fs
+    simplifyStep (Cond a Bot) = Neg a
     simplifyStep (Cond a c) = Cond (simplifyStep a) (simplifyStep c)
     simplifyStep (BiCond a c) = BiCond (simplifyStep a) (simplifyStep c)
     simplifyStep (Modal _ Top) = Top
