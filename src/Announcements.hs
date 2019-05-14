@@ -1,7 +1,7 @@
 {-| A module that holds examples for update models for different communication
 - types
 -}
-module Examples where
+module Announcements where
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Issue
