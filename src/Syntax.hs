@@ -94,8 +94,11 @@ instance Simplify Program where
     simplifyStep (Sequence ps)
         -- If this sequence contains ?_|_, then we can stop there.
         | Test Bot `elem` ps = Sequence $ takeUntil (== Test Bot) ps
+        | Test Top `elem` ps && last ps /= Test Top = Sequence $ filter (/= Test Top) ps
         | otherwise = Sequence $ map simplifyStep ps
     simplifyStep (Choice ps)
+        -- If everything ends with ?_|_, then just return that
+        | all f ps = Test Bot
         -- Any (sequence that ends with) ?_|_ can be removed, since those don't add anything
         | any f ps = Choice $ filter (not . f) ps
         | Test Bot `elem` ps && any (/= Test Bot) ps = Choice $ filter (/= Test Bot) ps
@@ -114,6 +117,7 @@ instance Simplify Program where
               initer p (Iterate p') = p == p'
               initer _ _ = False
               f (Sequence ps) = last ps == Test Bot
+              f (Test Bot) = True
               f _ = False
               matches = match $ map (\(Sequence p) -> p) ps
               leadSeq = fst matches
@@ -174,11 +178,13 @@ instance FlattenAble Formula where
     flattenStep (And fs) = And (nub $ concatMap unpack fs)
         where unpack (And subfs) = map flattenStep subfs
               unpack f = [flattenStep f]
-    flattenStep (Or []) = Top
+    flattenStep (Or []) = Bot
     flattenStep (Or [f]) = f
     flattenStep (Or fs) = Or (nub $ concatMap unpack fs)
         where unpack (Or subfs) = map flattenStep subfs
               unpack f = [flattenStep f]
+    flattenStep (IOr []) = Bot
+    flattenStep (IOr [f]) = f
     flattenStep (IOr fs) = IOr (nub $ concatMap unpack fs)
         where unpack (IOr subfs) = map flattenStep subfs
               unpack f = [flattenStep f]
@@ -186,6 +192,7 @@ instance FlattenAble Formula where
     flattenStep (BiCond f1 f2) = BiCond (flattenStep f1) (flattenStep f2)
     flattenStep (Modal p f) = Modal (flattenStep p) $ flattenStep f
     flattenStep (IModal p f) = IModal (flattenStep p) $ flattenStep f
+    flattenStep (Update m [] f) = Top
     flattenStep (Update m e f) = Update m e $ flattenStep f
     flattenStep f = f
 
@@ -208,12 +215,14 @@ instance Simplify Formula where
         | otherwise = flatten $ IOr $ nub $ map simplifyStep fs
     simplifyStep (Cond a c) = Cond (simplifyStep a) (simplifyStep c)
     simplifyStep (BiCond a c) = BiCond (simplifyStep a) (simplifyStep c)
+    simplifyStep (Modal _ Top) = Top
     simplifyStep (Modal p@(Sequence ps) f)
         | last ps == Test Bot = Top
         | otherwise = Modal (simplifyStep p) (simplifyStep f)
     simplifyStep (Modal p f)
         | p == Test Bot = Top
         | otherwise = Modal (simplifyStep p) (simplifyStep f)
+    simplifyStep (IModal _ Top) = Top
     simplifyStep (IModal p@(Sequence ps) f)
         | last ps == Test Bot = Top
         | otherwise = IModal (simplifyStep p) (simplifyStep f)
