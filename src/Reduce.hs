@@ -25,16 +25,26 @@ sub :: UpdateModel -> Event -> Substitution
 sub u e = substitutions u Map.! e
 
 tr :: UpdateModel -> Set.Set Event -> Set.Set Event -> Program -> Program
-tr um s t (Atom a)
-    | not $ Set.null ts'=
-        Sequence [Atom a, Test $ flatten $
-            Or [And [Or [pre um e | e <- Set.elems t'],
-                     And [Neg $ pre um e | e <- Set.elems $ Set.difference t t']]
-                | t' <- alternatives ts']]
-    | otherwise = Test Bot
-    where sigma = statemap um Map.! a
-          smaps = Set.unions (Set.map (\e -> sigma Map.! e) s)
-          ts' = Set.filter (\t' -> t' `Set.member` smaps && (not . Set.null) t') $ Set.powerSet t
+tr um s t (Atom a) =
+        Sequence [Test $ Or [pre um e | e <- Set.elems s],
+                  Choice [Sequence [Test $ npre s s',
+                                    Atom a,
+                                    Test $ Or [npre t t'
+                                              | t' <- Set.elems $ dt s']]
+                         | s' <- Set.elems $ Set.filter (not . Set.null) $ Set.powerSet s]]
+    where npre s s' = And [Neg $ pre um e | e <- Set.elems $ Set.difference s s']
+          sigma = statemap um Map.! a
+          smaps s' = Set.unions (Set.map (\e -> sigma Map.! e) s')
+          dt s' = Set.filter (\t' -> t' `Set.member` smaps s' && (not . Set.null) t') $ Set.powerSet t
+   -- | not $ Set.null ts'=
+    --     Sequence [Atom a, Test $ flatten $
+    --         Or [And [Or [pre um e | e <- Set.elems t'],
+    --                  And [Neg $ pre um e | e <- Set.elems $ Set.difference t t']]
+    --             | t' <- alternatives ts']]
+    -- | otherwise = Test Bot
+    -- where sigma = statemap um Map.! a
+    --       smaps = Set.unions (Set.map (\e -> sigma Map.! e) s)
+    --       ts' = Set.filter (\t' -> t' `Set.member` smaps && (not . Set.null) t') $ Set.powerSet t
 tr um s t (Test f)
     | t `Set.isSubsetOf` s = Test (Update ("", um) (Set.elems s) f)
     | otherwise = Test Bot
@@ -80,10 +90,10 @@ reduceUpdate n name u es (Cond a c)
             -- When a is interrogative we want to do one more reduction step so the implication is completely reduced
           reduce' n = if isDeclarative a then reduceStep n else reduceStep n . reduceStep n
 reduceUpdate n name u es (Modal p f) =
-        And $ nub [Modal (tr u es' fs p) $ Update (name, u) es f | fs <- Set.elems $ Set.powerSet $ events u]
+        And $ nub [Modal (tr u es' fs p) $ Update (name, u) (Set.elems fs) f | fs <- Set.elems $ Set.powerSet $ events u]
     where es' = Set.fromList es
 reduceUpdate n name u es (IModal p f) =
-        And $ nub [IModal (tr u es' fs p) $ Update (name, u) es f | fs <- Set.elems $ Set.powerSet $ events u]
+        And $ nub [IModal (tr u es' fs p) $ Update (name, u) (Set.elems fs) f | fs <- Set.elems $ Set.powerSet $ events u]
     where es' = Set.fromList es
 reduceUpdate n name u es (Update (name', u') es' f) =
         Update (name, u) es $ reduceUpdate n name' u' es' f
