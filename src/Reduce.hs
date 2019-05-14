@@ -36,15 +36,6 @@ tr um s t (Atom a) =
           sigma = statemap um Map.! a
           smaps s' = Set.unions (Set.map (\e -> sigma Map.! e) s')
           dt s' = Set.filter (\t' -> t' `Set.member` smaps s' && (not . Set.null) t') $ Set.powerSet t
-   -- | not $ Set.null ts'=
-    --     Sequence [Atom a, Test $ flatten $
-    --         Or [And [Or [pre um e | e <- Set.elems t'],
-    --                  And [Neg $ pre um e | e <- Set.elems $ Set.difference t t']]
-    --             | t' <- alternatives ts']]
-    -- | otherwise = Test Bot
-    -- where sigma = statemap um Map.! a
-    --       smaps = Set.unions (Set.map (\e -> sigma Map.! e) s)
-    --       ts' = Set.filter (\t' -> t' `Set.member` smaps && (not . Set.null) t') $ Set.powerSet t
 tr um s t (Test f)
     | t `Set.isSubsetOf` s = Test (Update ("", um) (Set.elems s) f)
     | otherwise = Test Bot
