@@ -88,12 +88,12 @@ f1 \\/ f2 = flattenStep $ IOr [asFormula f1, asFormula f2]
 
 -- | The implication operator
 infix 6 -->
-(-->) :: Formula -> Formula -> Formula
-(-->) = Cond
+(-->) :: (FormulaLike a, FormulaLike b) => a -> b -> Formula
+a --> c = flattenStep $ Cond (asFormula a) (asFormula c)
 -- | Biimplication operator
 infix 6 <->
-(<->) :: Formula -> Formula -> Formula
-(<->) = BiCond
+(<->) :: (FormulaLike a, FormulaLike b) => a -> b -> Formula
+a <-> c = flattenStep $ BiCond (asFormula a) (asFormula c)
 
 -- | The normal modality
 knows :: (ProgramLike a, FormulaLike b) => a -> b -> Formula
