@@ -74,6 +74,7 @@ asSet = enclose "\\{" "\\}" ", "
 
 instance Texable Program where
     toTexWithParen (Atom a) = prettyShow a
+    toTexWithParen (Test f) = '?' : toTexWithParen f
     toTexWithParen p@(Iterate _) = toTex p
     toTexWithParen p = '(' : toTex p ++ ")"
 
