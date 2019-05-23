@@ -81,10 +81,12 @@ reduceUpdate n name u es (Cond a c)
             -- When a is interrogative we want to do one more reduction step so the implication is completely reduced
           reduce' n = if isDeclarative a then reduceStep n else reduceStep n . reduceStep n
 reduceUpdate n name u es (Modal p f) =
-        And $ nub [Modal (tr u es' fs p) $ Update (name, u) (Set.elems fs) f | fs <- Set.elems $ Set.powerSet $ events u]
-    where es' = Set.fromList es
+        And [Or [And $ nub [Modal (tr u e fs p) $ Update (name, u) (Set.elems fs) a
+                           | fs <- Set.elems $ Set.filter (not . Set.null) $ Set.powerSet $ events u]
+                | a <- resolutions n f]
+            | e <- map Set.singleton es]
 reduceUpdate n name u es (IModal p f) =
-        And $ nub [IModal (tr u es' fs p) $ Update (name, u) (Set.elems fs) f | fs <- Set.elems $ Set.powerSet $ events u]
+        And $ nub [IModal (tr u es' fs p) $ Update (name, u) (Set.elems fs) f | fs <- Set.elems $ Set.filter (not . Set.null) $ Set.powerSet $ events u]
     where es' = Set.fromList es
 reduceUpdate n name u es (Update (name', u') es' f) =
         Update (name, u) es $ reduceUpdate n name' u' es' f
