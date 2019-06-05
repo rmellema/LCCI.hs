@@ -26,17 +26,6 @@ dependencies:
 library:
   source-dirs: src
 
-executables:
-  LCCI-exe:
-    main:                Main.hs
-    source-dirs:         app
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - LCCI
-
 tests:
   LCCI-test:
     main:                Spec.hs
