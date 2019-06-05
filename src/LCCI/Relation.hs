@@ -1,9 +1,9 @@
 {-|
  - This module implements a simple model of Relations between information states.
 -}
-module Relation (
+module LCCI.Relation (
     Relation,
-    Relation.null,
+    null,
     empty,
     insert,
     fromList,
@@ -20,14 +20,14 @@ module Relation (
     makeValid,
 ) where
 import qualified Prelude
-import Prelude hiding (lookup, union, map)
+import Prelude hiding (lookup, union, map, null)
 import qualified Data.Map as Map
 import Data.Map (Map)
 import qualified Data.List as List
 import qualified Data.Set as Set
 import Data.Set (Set)
-import Issue
-import Util(PrettyShow, prettyShow)
+import LCCI.Issue
+import LCCI.Util(PrettyShow, prettyShow)
 
 -- | The relation type, used for relating information states to other relation
 -- states.

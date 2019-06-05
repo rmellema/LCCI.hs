@@ -1,11 +1,11 @@
 {-|
- - This modeul breaks the cyclical reference between Syntax and Model
+ - This module breaks the cyclical reference between Syntax and Model
 -}
-module Model (
+module LCCI.Model (
     Event,
     UpdateModel(..),
 ) where
-import Util (PrettyShow)
+import LCCI.Util (PrettyShow)
 
 newtype Event = Event Int
 instance Ord Event

@@ -2,16 +2,16 @@
  - A module for making the reading and writing of formulas easier, by defining
  - operators and functions that are less efficient, but eaier to use.
 -}
-module PrettySyntax (
+module LCCI.PrettySyntax (
     PrettyShow,
     prettyShow,
-    module PrettySyntax,
+    module LCCI.PrettySyntax,
 ) where
-import Syntax
-import Evaluation
-import Model
-import Issue
-import Util (PrettyShow, prettyShow)
+import LCCI.Syntax
+import LCCI.Evaluation
+import LCCI.Model
+import LCCI.Issue
+import LCCI.Util (PrettyShow, prettyShow)
 
 -- | A class for objects that can be cast into programs.
 class ProgramLike a where

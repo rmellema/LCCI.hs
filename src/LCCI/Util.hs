@@ -2,7 +2,7 @@
 This Module exports some utility functions that are in use in other parts of the
 project.
 -}
-module Util (
+module LCCI.Util (
     permutate,
     prettyShowWithParen,
     PrettyShow,

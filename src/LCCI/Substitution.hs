@@ -4,7 +4,7 @@ them. A substitution is a map from propositional atoms to formulas, that can be
 used to change the truth value of a proposition after the execution of an
 action.
 -}
-module Substitution (
+module LCCI.Substitution (
     Substitution,
     null,
     size,
@@ -21,8 +21,8 @@ import Data.List (intercalate)
 import qualified Data.Map as Map
 import Data.Maybe
 import Prelude hiding (lookup, null)
-import Syntax
-import Util
+import LCCI.Syntax
+import LCCI.Util
 
 -- | A type for the substitutions.
 newtype Substitution = Substitution (Map.Map Proposition Formula)

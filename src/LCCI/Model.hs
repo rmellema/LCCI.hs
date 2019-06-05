@@ -2,7 +2,7 @@
 This module implements both the static and update models of LCCI,
 including the Valuation
 -}
-module Model (
+module LCCI.Model (
     Valuation,
     ValuationMap,
     showValuationMap,
@@ -14,11 +14,11 @@ module Model (
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Data.List(intercalate, subsequences)
-import Issue
-import Relation
-import Substitution
-import Syntax
-import Util
+import LCCI.Issue
+import LCCI.Relation
+import LCCI.Substitution
+import LCCI.Syntax
+import LCCI.Util
 
 -- | The valuation for an IE-PDL model.
 type Valuation a = (Proposition -> a -> Bool)

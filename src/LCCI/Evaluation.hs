@@ -1,7 +1,7 @@
 {-|
 This module holds the code for the evaluation of LCCI formulas in models.
 -}
-module Evaluation (
+module LCCI.Evaluation (
     compoundRelation,
     compoundRelation',
     supports,
@@ -13,11 +13,11 @@ import qualified Data.Set as Set
 import Data.Maybe (fromMaybe)
 import Prelude hiding (lookup)
 
-import Issue
-import Model
-import Relation
-import Substitution hiding (lookup)
-import Syntax
+import LCCI.Issue
+import LCCI.Model
+import LCCI.Relation as Relation
+import LCCI.Substitution hiding (lookup)
+import LCCI.Syntax
 
 -- | Calculate the compound relation for a given model and program.
 compoundRelation' :: (World a) => StaticModel a -> Program -> Relation a

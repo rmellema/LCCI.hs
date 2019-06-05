@@ -1,14 +1,14 @@
 {-| This module allows for the reduction of formulas to equivalent formulas that
  - do not use the Update operator.
  -}
-module Reduce (reduce, reduceStep, tr, k) where
+module LCCI.Reduce (reduce, reduceStep, tr, k) where
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import Data.List (nub)
-import Issue (alternatives)
-import Model
-import Substitution
-import Syntax
+import LCCI.Issue (alternatives)
+import LCCI.Model
+import LCCI.Substitution
+import LCCI.Syntax
 
 -- | Reduce all the formulas in a program to an IE-PDL formula
 pReduce :: Int -> Program -> Program

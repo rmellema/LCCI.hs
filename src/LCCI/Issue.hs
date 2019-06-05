@@ -2,7 +2,7 @@
 This module implements the structures from Inquisitive Semantics
 Information States, Issues, and State Maps.
 -}
-module Issue (
+module LCCI.Issue (
     World(..),
     State,
     state,
@@ -21,8 +21,8 @@ module Issue (
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Data.List(intercalate, subsequences)
-import Syntax
-import Util(PrettyShow, prettyShow)
+import LCCI.Syntax
+import LCCI.Util(PrettyShow, prettyShow)
 
 -- | A world in an LCCI model
 class (Ord a) => World a

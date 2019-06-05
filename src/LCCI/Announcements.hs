@@ -1,14 +1,14 @@
 {-| A module that holds examples for update models for different communication
 - types
 -}
-module Announcements where
+module LCCI.Announcements where
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Issue
-import Model
-import Substitution
-import Syntax
-import Util
+import LCCI.Issue
+import LCCI.Model
+import LCCI.Substitution as Substitution
+import LCCI.Syntax
+import LCCI.Util
 
 p, q, r :: Proposition
 p = proposition "P"

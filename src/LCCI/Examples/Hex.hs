@@ -1,14 +1,14 @@
 {-|
 An implementation of the famous Hex model in LCCI.
 -}
-module Hex where
+module LCCI.Examples.Hex where
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Issue
-import Model
-import Relation
-import Syntax
-import PrettySyntax
+import LCCI.Issue
+import LCCI.Model
+import LCCI.Relation as Relation
+import LCCI.Syntax
+import LCCI.PrettySyntax
 
 instance (Ord a, Ord b, Ord c) => World (a, b, c)
 

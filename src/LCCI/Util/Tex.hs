@@ -33,12 +33,12 @@ excistens of the following LaTeX macros:
 
  [@\\sub@] Typesets the function for the substitution. Takes one argument, the thing upon which the function is called.
  -}
-module Tex where
+module LCCI.Util.Tex where
 import Data.List (intercalate)
-import Issue
-import Model
-import Syntax
-import Util
+import LCCI.Issue
+import LCCI.Model
+import LCCI.Syntax
+import LCCI.Util
 
 -- | Convert a datastructure to a valid TeX representation of the structure.
 -- May use the commands given at the start of this module.

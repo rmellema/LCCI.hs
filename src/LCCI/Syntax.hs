@@ -2,7 +2,7 @@
 This module implements the Syntax of LCCI, and formulas for manipulating this
 syntax.
 -}
-module Syntax (
+module LCCI.Syntax (
         Atomic,
         atom,
         Program(..),
@@ -23,8 +23,8 @@ module Syntax (
 import Data.Char(toLower, toUpper)
 import Data.List(nub)
 import Data.Maybe (fromJust)
-import Util
-import {-# SOURCE #-} Model
+import LCCI.Util
+import {-# SOURCE #-} LCCI.Model
 
 -- | A datatype for structures that can be flattened, like programs and formulas
 class (Eq a) => FlattenAble a where
