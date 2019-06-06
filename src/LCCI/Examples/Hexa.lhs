@@ -1,6 +1,7 @@
-{-|
+\section{The Hex Game}
 An implementation of the famous Hex model in LCCI.
--}
+
+\begin{code}
 module LCCI.Examples.Hex where
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -9,7 +10,9 @@ import LCCI.Model
 import LCCI.Relation as Relation
 import LCCI.Syntax
 import LCCI.PrettySyntax
+\end{code}
 
+\begin{code}
 instance (Ord a, Ord b, Ord c) => World (a, b, c)
 
 instance (Show a, Show b, Show c) => PrettyShow (a, b, c) where
@@ -105,3 +108,4 @@ r = Map.fromList
 -- | The actual model
 hex :: StaticModel (Int, Int, Int)
 hex = StaticModel ws v r
+\end{code}
