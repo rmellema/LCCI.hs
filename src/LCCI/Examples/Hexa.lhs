@@ -2,14 +2,14 @@
 An implementation of the famous Hex model in LCCI.
 
 \begin{code}
-module LCCI.Examples.Hex where
+module LCCI.Examples.Hexa where
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import LCCI.Issue
 import LCCI.Model
 import LCCI.Relation as Relation
 import LCCI.Syntax
-import LCCI.PrettySyntax
+import LCCI.Syntax.Pretty
 \end{code}
 
 \begin{code}

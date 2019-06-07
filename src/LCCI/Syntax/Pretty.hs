@@ -2,10 +2,10 @@
  - A module for making the reading and writing of formulas easier, by defining
  - operators and functions that are less efficient, but eaier to use.
 -}
-module LCCI.PrettySyntax (
+module LCCI.Syntax.Pretty (
     PrettyShow,
     prettyShow,
-    module LCCI.PrettySyntax,
+    module LCCI.Syntax.Pretty,
 ) where
 import LCCI.Syntax
 import LCCI.Evaluation
