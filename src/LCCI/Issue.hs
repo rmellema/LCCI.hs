@@ -81,6 +81,6 @@ showStateMap i s = intercalate i . Map.elems . Map.mapWithKey show'
 
 -- | Turn a map of statemaps into a human readable string. The elements in the
 -- statemap and between statemaps are seperated by the string @i@.
-showStateMaps :: (Ord a, PrettyShow a) => String -> Map.Map Atomic (StateMap a) -> String
+showStateMaps :: (Ord a, PrettyShow a, PrettyShow b) => String -> Map.Map b (StateMap a) -> String
 showStateMaps i = intercalate i . Map.elems . Map.mapWithKey show'
     where show' k = showStateMap i (prettyShow k)

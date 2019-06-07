@@ -33,7 +33,7 @@ tr um s t (Atom a) =
                                               | t' <- Set.elems $ dt s']]
                          | s' <- Set.elems $ Set.filter (not . Set.null) $ Set.powerSet s]]
     where npre s s' = And [Neg $ pre um e | e <- Set.elems $ Set.difference s s']
-          sigma = statemap um Map.! a
+          sigma = eventStatemap um Map.! a
           smaps s' = Set.unions (Set.map (\e -> sigma Map.! e) s')
           dt s' = Set.filter (\t' -> t' `Set.member` smaps s' && (not . Set.null) t') $ Set.powerSet t
 tr um s t (Test f)

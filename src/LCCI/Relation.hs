@@ -7,6 +7,7 @@ module LCCI.Relation (
     empty,
     insert,
     fromList,
+    fromStateMap,
     keys,
     toList,
     union,
@@ -18,6 +19,7 @@ module LCCI.Relation (
     isValid,
     makeKeys,
     makeValid,
+    showRelation,
 ) where
 import qualified Prelude
 import Prelude hiding (lookup, union, map, null)
@@ -27,6 +29,7 @@ import qualified Data.List as List
 import qualified Data.Set as Set
 import Data.Set (Set)
 import LCCI.Issue
+import LCCI.Syntax
 import LCCI.Util(PrettyShow, prettyShow)
 
 -- | The relation type, used for relating information states to other relation
@@ -40,6 +43,11 @@ instance (PrettyShow a, Ord a) => PrettyShow (Relation a) where
               minNeed r = concatMap makeAlts singeltons
               makeAlts k = [(k, i') | i' <- alternatives $ lookup r k]
               singeltons = filter (\s -> Set.size s == 1) $ keys r
+
+-- | Turn the given map of @Relation@s into a string.
+showRelation :: (PrettyShow a, Ord a) => Map.Map Atomic (Relation a) -> String
+showRelation = List.intercalate "\n" . Map.elems . Map.mapWithKey show'
+    where show' k v = "R_{" ++ prettyShow k ++ "} = " ++ prettyShow v
 
 -- | Check if a given relation is empty.
 null :: Relation a -> Bool

@@ -7,7 +7,6 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import LCCI.Issue
 import LCCI.Model
-import LCCI.Relation as Relation
 import LCCI.Syntax
 import LCCI.Syntax.Pretty
 \end{code}
@@ -76,36 +75,36 @@ v p (ca, cb, cc) = show (card' (player p)) == card p
           card' 'B' = cb
           card' 'C' = cc
 
--- | The relations for all the various agents.
-r :: Map.Map Atomic (Relation (Int, Int, Int))
-r = Map.fromList
-    [ (a, Relation.fromList
-        [ (state [w1], state [w1]), (state [w1], state [w2])
-        , (state [w2], state [w1]), (state [w2], state [w2])
-        , (state [w3], state [w3]), (state [w3], state [w4])
-        , (state [w4], state [w3]), (state [w4], state [w4])
-        , (state [w5], state [w5]), (state [w5], state [w6])
-        , (state [w6], state [w5]), (state [w6], state [w6])
+-- | The state maps for all the various agents.
+s :: Map.Map Atomic (StateMap (Int, Int, Int))
+s = Map.fromList
+    [ (a, Map.fromList
+        [ (w1, issue [state [w1], state [w2]])
+        , (w2, issue [state [w1], state [w2]])
+        , (w3, issue [state [w3], state [w4]])
+        , (w4, issue [state [w3], state [w4]])
+        , (w5, issue [state [w5], state [w6]])
+        , (w6, issue [state [w5], state [w6]])
         ])
-    , (b, Relation.fromList
-        [ (state [w1], state [w1]), (state [w1], state [w6])
-        , (state [w2], state [w2]), (state [w2], state [w4])
-        , (state [w3], state [w3]), (state [w3], state [w5])
-        , (state [w4], state [w2]), (state [w4], state [w4])
-        , (state [w5], state [w5]), (state [w5], state [w3])
-        , (state [w6], state [w1]), (state [w6], state [w6])
+    , (b, Map.fromList
+        [ (w1, issue [state [w1], state [w6]])
+        , (w2, issue [state [w2], state [w4]])
+        , (w3, issue [state [w3], state [w5]])
+        , (w4, issue [state [w2], state [w4]])
+        , (w5, issue [state [w3], state [w5]])
+        , (w6, issue [state [w1], state [w6]])
         ])
-    , (c, Relation.fromList
-        [ (state [w1], state [w1]), (state [w1], state [w3])
-        , (state [w2], state [w2]), (state [w2], state [w5])
-        , (state [w3], state [w3]), (state [w3], state [w1])
-        , (state [w4], state [w4]), (state [w4], state [w6])
-        , (state [w5], state [w5]), (state [w5], state [w2])
-        , (state [w6], state [w6]), (state [w6], state [w4])
+    , (c, Map.fromList
+        [ (w1, issue [state [w1], state [w3]])
+        , (w2, issue [state [w2], state [w5]])
+        , (w3, issue [state [w1], state [w3]])
+        , (w4, issue [state [w4], state [w6]])
+        , (w5, issue [state [w2], state [w5]])
+        , (w6, issue [state [w4], state [w6]])
         ])
     ]
 
 -- | The actual model
 hex :: StaticModel (Int, Int, Int)
-hex = StaticModel ws v r
+hex = StaticModel ws v s
 \end{code}

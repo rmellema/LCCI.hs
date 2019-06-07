@@ -6,7 +6,6 @@ module LCCI.Model (
     Valuation,
     ValuationMap,
     showValuationMap,
-    showRelation,
     StaticModel(..),
     Event(..),
     UpdateModel(..),
@@ -15,7 +14,6 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Data.List(intercalate, subsequences)
 import LCCI.Issue
-import LCCI.Relation
 import LCCI.Substitution
 import LCCI.Syntax
 import LCCI.Util
@@ -36,25 +34,20 @@ showValuationMap :: (Show a) => String -> ValuationMap a -> String
 showValuationMap s = intercalate s . Map.elems . Map.mapWithKey show'
     where show' k a = "V(" ++ show k ++ ") = " ++ prettyShow a
 
--- | Turn the given map of @Relation@s into a string.
-showRelation :: (PrettyShow a, Ord a) => Map.Map Atomic (Relation a) -> String
-showRelation = intercalate "\n" . Map.elems . Map.mapWithKey show'
-    where show' k v = "R_{" ++ prettyShow k ++ "} = " ++ prettyShow v
-
 -- | A @StaticModel@ represents an IE-PDL model.
 data StaticModel a = StaticModel
                 { worlds :: Set.Set a -- ^ The worlds in this model.
                 , valuation :: Valuation a -- ^ The valuation for this model. Should be a full function over @worlds@
-                , relation :: Map.Map Atomic (Relation a) -- ^ The relation belonging to the model. Should relate every world in @worlds@ to some information state.
+                , staticStatemap :: Map.Map Atomic (StateMap a) -- ^ The statemap belonging to the model. Should relate every world in @worlds@ to some information state.
                 }
 
 instance (Show a) => Show (StaticModel a) where
-    show m = "StaticModel " ++ show (worlds m) ++ " undefinedV " ++ show (relation m)
+    show m = "StaticModel " ++ show (worlds m) ++ " undefinedV " ++ show (staticStatemap m)
 
 instance (World a, PrettyShow a) => PrettyShow (StaticModel a) where
-    prettyShow (StaticModel w v r) = "W = " ++ prettyShow w ++ "\n" ++
+    prettyShow (StaticModel w v s) = "W = " ++ prettyShow w ++ "\n" ++
                          "V\n" ++
-                         showRelation r
+                         showStateMaps "\n" s
 
 -- | A type to represent events in the @UpdateModel@.
 newtype Event = Event Int deriving (Ord, Eq, Show)
@@ -68,7 +61,7 @@ instance (World a, Ord b) => World (a, b)
 -- to evaluate @Formula@s with an update operator.
 data UpdateModel = UpdateModel
                 { events :: Set.Set Event
-                , statemap :: Map.Map Atomic (StateMap Event)
+                , eventStatemap :: Map.Map Atomic (StateMap Event)
                 , precondition :: Map.Map Event Formula
                 , substitutions :: Map.Map Event Substitution
                 } deriving (Eq, Show)
@@ -88,4 +81,3 @@ instance PrettyShow UpdateModel where
                                       showStateMaps "\n" s ++ "\n" ++
                                       showPreconditions pre ++ "\n" ++
                                       showSubstitutions sub
-

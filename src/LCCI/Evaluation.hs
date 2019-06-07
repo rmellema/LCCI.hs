@@ -21,7 +21,7 @@ import LCCI.Syntax
 
 -- | Calculate the compound relation for a given model and program.
 compoundRelation' :: (World a) => StaticModel a -> Program -> Relation a
-compoundRelation' m (Atom a) = fromMaybe (error msg) (Map.lookup a (relation m))
+compoundRelation' m (Atom a) = fromStateMap $ fromMaybe (error msg) (Map.lookup a (staticStatemap m))
     where msg = "Atomic relations for '" ++ show a ++ "' not given!"
 compoundRelation' m (Test f) = Set.foldl fold Relation.empty ss
     where ss = powerset $ worlds m
@@ -62,13 +62,14 @@ pre u e = precondition u Map.! e
 sub :: UpdateModel -> Event -> Substitution
 sub u e = substitutions u Map.! e
 
-relUpdate :: (World a) => State (a, Event) -> Atomic -> StaticModel a -> UpdateModel -> Relation (a, Event)
-relUpdate ws a m u = Relation.fromList
-        [(state [(w, e)], t) | (w, e) <- Set.toList ws, t <- Set.toList $ Set.powerSet ws,
-                               proj1 t `Set.member` lookup ra (state [w]),
-                               proj2 t `Set.member` (sa Map.! e)]
-        where ra = relation m Map.! a
-              sa = statemap u Map.! a
+relUpdate :: (World a) => State (a, Event) -> Atomic -> StaticModel a -> UpdateModel -> StateMap (a, Event)
+relUpdate ws a m u = Map.fromList
+        [((w, e), issue [t | t <- Set.toList $ Set.powerSet ws,
+                             proj1 t `Set.member` (sm Map.! w),
+                             proj2 t `Set.member` (em Map.! e)])
+        | (w, e) <- Set.toList ws]
+        where sm = staticStatemap m Map.! a
+              em = eventStatemap  u Map.! a
 
 -- | Update the given @StaticModel m@ with the given @UpdateModel u@.
 productUpdate :: (World a) => StaticModel a -> UpdateModel -> StaticModel (a, Event)
@@ -77,7 +78,7 @@ productUpdate m u = StaticModel ws v r
                                       e <- Set.toList $ events u,
                                     supports m (state [w]) $ pre u e]
           v p (w, e) = supports m (state [w]) (sub u e ! p)
-          r = Map.fromList [(a, relUpdate ws a m u) | a <- Map.keys (relation m)]
+          r = Map.fromList [(a, relUpdate ws a m u) | a <- Map.keys (staticStatemap m)]
 
 -- | Calculate the updated state of @s@ in @m@ under application of events @es@
 -- from model @u@.
