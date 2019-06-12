@@ -103,6 +103,10 @@ knows p f = Modal (asProgram p) (asFormula f)
 entertains :: (ProgramLike a, FormulaLike b) => a -> b -> Formula
 entertains p f = IModal (asProgram p) (asFormula f)
 
+-- | A function to quickly make the wonder modality
+wonder :: (ProgramLike a, FormulaLike b) => a -> b -> Formula
+wonder p f = neg (knows p f) /\ entertains p f
+
 -- | The update procedure operator
 infix 1 @@
 (@@) :: (World a) => StaticModel a -> UpdateModel -> StaticModel (a, Event)
