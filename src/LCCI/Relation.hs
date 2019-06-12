@@ -64,7 +64,7 @@ insert (Relation r) s t = Relation (Map.insertWith Set.union s t' r)
 
 -- | Read a relation from a given state map
 fromStateMap :: (World a) => StateMap a -> Relation a
-fromStateMap = Relation . Map.foldrWithKey f Map.empty
+fromStateMap = makeValid . makeKeys . Relation . Map.foldrWithKey f Map.empty
     where f k = Map.insert (state [k])
 
 -- | Read a relation from a list of tuples.
