@@ -69,12 +69,12 @@ data UpdateModel = UpdateModel
 -- | Turn the preconditions into a string representation that is human readable.
 showPreconditions :: Map.Map Event Formula -> String
 showPreconditions = intercalate "\n" . Map.elems . Map.mapWithKey f
-    where f k v = "pre(" ++ prettyShow k ++ ") = " ++ show v
+    where f k v = "pre(" ++ prettyShow k ++ ") = " ++ prettyShow v
 
 -- | Turn the substitutions into a string representation that is human readable.
 showSubstitutions :: Map.Map Event Substitution -> String
 showSubstitutions = intercalate "\n" . Map.elems . Map.mapWithKey f
-    where f k v = "sub(" ++ prettyShow k ++ ") = " ++ show v
+    where f k v = "sub(" ++ prettyShow k ++ ") = " ++ prettyShow v
 
 instance PrettyShow UpdateModel where
     prettyShow (UpdateModel es s pre sub) = "E = " ++ prettyShow es ++ "\n" ++
