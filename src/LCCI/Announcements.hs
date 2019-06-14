@@ -19,19 +19,16 @@ ingroup, outgroup :: Atomic
 ingroup = atom "b"
 outgroup = atom "n\\b"
 
-e1, e2 :: Event
-e1 = Event 1
-e2 = Event 2
-
 -- | An infinite list with events, which is useful for zipping with or taking
 -- from. Numbering of this list starts at 1.
 eventList :: [Event]
 eventList = map Event [1..]
 
-prtStr :: String -> [Formula] -> String
-prtStr "" [f] = '!' : prettyShow f
-prtStr "" fs  = '!' : prettyShow (IOr fs)
-prtStr s  _   = s
+prtStr :: String -> Bool -> [Formula] -> String
+prtStr "" _     [f] = '!' : prettyShow f
+prtStr "" True  fs  = '?' : prettyShow (IOr fs)
+prtStr "" False fs  = '!' : prettyShow (IOr fs)
+prtStr s  _     _   = s
 
 -- | Create an issue where the agent entertains which specific event occured
 worldIssue :: (Ord a) => [a] -> Issue a
@@ -43,7 +40,7 @@ worldIssue = issue . map (state . (:[]))
 -- actually declarative. The `String` is used as the name for the update
 -- model, and will be substituted by a default if left empty.
 publicRaise :: String -> [Atomic] -> [Formula] -> (String, UpdateModel)
-publicRaise s as fs = (prtStr s fs, UpdateModel (Set.fromList $ map fst nfs) sms pre sub)
+publicRaise s as fs = (prtStr s True fs, UpdateModel (Set.fromList $ map fst nfs) sms pre sub)
     where nfs = zip eventList fs
           sms = Map.fromList [(a, sm) | a <- as]
           sm  = Map.fromList [(e, iss) | (e, _) <- nfs]
@@ -66,15 +63,16 @@ defaultPublicRaise = publicRaise ""
 
 -- | Create an update model for the private announcement of a question. In this
 -- case, all the agents are aware that a question is being asked, but they are
--- not all aware what this question is. The first list of `Atomic` agents are
--- the ingroup, the group that knows which question is asked. The second are
--- the outgroup, the group that does not know which question is asked, but
+-- not all aware what this question is. This question is the inquisitive
+-- disjunction of the given list of formulas. The first list of `Atomic` agents
+-- are the ingroup, the group that knows which question is asked. The second
+-- are the outgroup, the group that does not know which question is asked, but
 -- wants to know, and the third are the agents that do not care about the
 -- question being asked. The rest of the parameters are as in `publicRaise`.
 privateRaise :: String -> [Atomic] -> [Atomic] -> [Atomic] -> [Formula] -> (String, UpdateModel)
 privateRaise s ing outg unintr fs = (prettyShow ing ++ s',
                                      UpdateModel (Set.fromList es) sms pre sub)
-    where s'     = prtStr s fs
+    where s'     = prtStr s True fs
           nfs    = zip eventList fs
           e0     = Event 0
           es     = map fst nfs ++ [e0]
@@ -87,6 +85,31 @@ privateRaise s ing outg unintr fs = (prettyShow ing ++ s',
           unsm   = Map.fromList [(e, uniss) | e <- es]
           uniss  = issue [state es]
           pre    = Map.fromList ((e0, Top) : nfs)
+          sub    = Map.fromList [(e, Substitution.empty) | e <- es]
+
+-- | Create an update model for the private announcement of some formula. In this
+-- case, all the agents are aware that some piece of information is given, but they are
+-- not all aware what this is. The first list of `Atomic` agents
+-- are the ingroup, the group that knows what is being told. The second
+-- are the outgroup, the group that does not know what is being told, but
+-- wants to know, and the third are the agents that do not care about the
+-- information. The list of formulas are all the possible pieces of information
+-- that can be shared. If this list has a length of 1, an extra event with
+-- precondition True will be added to the model. The rest of the parameters are
+-- as in `publicRaise`.
+privateInform :: String -> [Atomic] -> [Atomic] -> [Atomic] -> [Formula] -> (String, UpdateModel)
+privateInform s ing outg unintr fs = (prettyShow ing ++ s',
+                                     UpdateModel (Set.fromList es) sms pre sub)
+    where s'     = prtStr s False fs
+          e0     = Event 0
+          nfs    = zip eventList fs ++ [(e0, Top) | length fs == 1]
+          es     = map fst nfs
+          sms    = Map.fromList ([(a, insm) | a <- ing] ++ [(a, outsm) | a <- outg] ++
+                                 [(a, unsm) | a <- unintr])
+          insm   = Map.fromList [(e, issue [state [e]]) | e <- es]
+          outsm  = Map.fromList [(e, worldIssue es) | e <- es]
+          unsm   = Map.fromList [(e, issue [state es]) | e <- es]
+          pre    = Map.fromList nfs
           sub    = Map.fromList [(e, Substitution.empty) | e <- es]
 
 -- | A function that creates an update model for the private announcement of a
@@ -102,7 +125,7 @@ private i o u f n = privateRaise ('!' : prettyShow f) i o u (resolutions n f)
 -- that something is happening. the rest of the parameters are as in
 -- `publicRaise`.
 secretRaise :: String -> [Atomic] -> [Atomic] -> [Formula] -> (String, UpdateModel)
-secretRaise s ing outg fs = (prettyShow ing ++ 's' : prtStr s fs,
+secretRaise s ing outg fs = (prettyShow ing ++ 's' : prtStr s True fs,
                              UpdateModel (Set.fromList es) sms pre sub)
     where nfs = zip eventList fs
           e0  = Event 0
