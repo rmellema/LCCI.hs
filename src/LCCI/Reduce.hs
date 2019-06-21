@@ -106,7 +106,7 @@ reduceStep' n (Update (name, u) es f) = reduceUpdate n name u es f
 
 -- | Set the next step of the reduction from LCCI to IE-PDL
 reduceStep :: Int -> Formula -> Formula
-reduceStep n = reduceStep' n . expand
+reduceStep n = flatten . reduceStep' n . expand
 
 reduce' :: Int -> Formula -> Formula
 reduce' n f
