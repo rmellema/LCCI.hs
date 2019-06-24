@@ -99,6 +99,7 @@ instance Simplify Program where
     simplifyStep (Choice ps)
         -- If everything ends with ?_|_, then just return that
         | all f ps = Test Bot
+        | all (== head ps) ps = head ps
         -- Any (sequence that ends with) ?_|_ can be removed, since those don't add anything
         | any f ps = Choice $ filter (not . f) ps
         | Test Bot `elem` ps && any (/= Test Bot) ps = Choice $ filter (/= Test Bot) ps
