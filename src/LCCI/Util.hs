@@ -20,7 +20,7 @@ import Prelude hiding (foldr)
 -- | Given a list of lists, calculate all the possible permutations of their
 -- elements. So it picks one element for each list, and then puts that in front
 -- of the permutations of the rest of the lists. This is the same as making a
--- list comprehension that takes from each list, but for an unknown amount of
+-- list comprehension that takes from each list, but for an unknown number of
 -- lists.
 permutate :: [[a]] -> [[a]]
 permutate [] = []

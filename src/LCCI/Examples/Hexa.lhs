@@ -4,18 +4,18 @@
 \section{The Hexa Game}
 In this example, we will walk through the modeling of the Hexa game in \LCCI,
 using the implementation to aid us in answering questions about the model. The
-Hexa game was first presented in~\parencite{vanDitmarsch:2000vw}, but is more
-often used as a testbed for Dynamic Epistemic Logics. We decided to use this as
+Hexa game was first presented in~\parencite{vanDitmarsch:2000vw}, and is used
+more often as a testbed for Dynamic Epistemic Logics. We decided to use this as
 an example instead of Citadels since the models are smaller and easier to
 understand.
 
 Since the implementation is written in Haskell, the example will also be given
 in Haskell. While we will try to keep the example easy to follow for those who
-have no experience with Haskell, if you want to use the implementation
-yourself, it might be useful to read up on using the language. For this we
-would recommend using \citetitle{Doets:2012uk} \parencite{Doets:2012uk}. If you
-are also interested in using Haskell as a general programming language, then
-\citetitle{lyah} \parencite{lyah} is also a good introduction.
+have no experience with Haskell, if you want to use \LCCIhs\ yourself, it might
+be useful to read up on using the language. For this we would recommend using
+\citetitle{Doets:2012uk} \parencite{Doets:2012uk}. If you are also interested
+in using Haskell as a general programming language, then \citetitle{lyah}
+\parencite{lyah} is also a good introduction.
 
 \subsection{The Game}
 Before we can start to model the game in \LCCI, we will first have to
@@ -562,14 +562,18 @@ at defining action models.
 Bill and Carol are a bit mischievous and decided to swap their cards. This
 action can also be modelled within \LCCIhs, since it also implements the
 substitutions from \LCCI\ as well. Defining an action model is similar to
-defining a static model, but here we will also have to define a model first.
+defining a static model, so here we will have to define the events first.
 
 The swapping of cards sounds like it would only need one event, but it actually
-will need a bit more. The method we will use will require 3 events, one for Bill
-and Carol swapping cards 0 and 1, one for them swapping 0 and 2, and one for
-them swapping 1 and 2. Who holds which card is not important for this model. We
-will assume that all agents are disinterested in which event actually happens.
-This gives us the following events and state maps.
+will need a bit more. The method we will use will require 3 events, one for
+Bill and Carol swapping cards 0 and 1, one for them swapping 0 and 2, and one
+for them swapping 1 and 2. Who holds which card is not important for this
+model. We will assume that all agents are disinterested in which event actually
+happens.  The reasoning for this is that, if the agents were interested in
+which card one of the two had before the action, they will be interested after
+the action has been executed, but if they were not interested, the swapping
+cards will have no effect on their state maps. This gives us the following
+events and state maps.
 
 \begin{code}
 e1, e2, e3 :: Event
@@ -715,7 +719,7 @@ reduceStep 100 (Update (publicRaise "" [a, b, c] [alpha]) [Event 1]
 :}
 \end{ghci}
 
-We will probably want to save this function. For that, \texttt{ghci} has the
+We will probably want to save this result. For that, \texttt{ghci} has the
 special variable |it|, which we will reassign to a different variable.
 
 \begin{ghci}
