@@ -7,6 +7,11 @@ In order to build the library, you need the program `stack`, which takes care of
 building everything and installing the requirements. `stack` can be downloaded
 [here](https://docs.haskellstack.org/en/stable/install_and_upgrade/).
 
+# Documentation
+The documenation for this project can be found in the `docs` folder or 
+[online](https://rmellema.github.io/LCCI.hs/index.html). There is also a tutorial, which you 
+can read [here](https://github.com/rmellema/LCCI.hs/blob/master/src/LCCI/Examples/hexa.pdf).
+
 # Usage
 The library can be build and loaded by executing the following command from this directory:
 ```
