@@ -1,0 +1,129 @@
+% This file allows you to compile the file Hexa.lhs to a pdf using LaTeX. Since Hexa.lhs is actually
+% part of a larger thesis, there are some missing references, so you can ignore those.
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+
+% Math packages
+\usepackage{stmaryrd}
+\usepackage{mathtools}
+\usepackage{amssymb}
+\usepackage{scalerel}
+
+% Language support
+\usepackage[british]{babel}
+\usepackage{csquotes}
+
+% Tikz and other drawings
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usepackage{subcaption}
+\usepackage{xcolor}
+
+% Misc
+\usepackage[
+style=numeric-comp,
+backend=biber,
+giveninits=true,
+useprefix=true,
+natbib=true]{biblatex}
+\usepackage[final]{listings}
+
+% Better references
+\usepackage[draft=false]{hyperref}
+\usepackage[noabbrev,capitalise]{cleveref}
+
+% Bibliography
+\addbibresource{hexa.bib}
+
+% % % % %
+% Code  %
+% % % % %
+\makeatletter
+\lstnewenvironment{code}[1][]
+{\lstset{#1}
+    \csname\@lst @SetFirstLabel\endcsname%   % chktex 1
+\csname\@lst @SetFirstNumber\endcsname}  % chktex 1
+{\csname\@lst @SaveFirstLabel\endcsname%   % chktex 1
+\csname\@lst @SaveFirstNumber\endcsname}  % chktex 1
+\lstnewenvironment{ghci}[1][]
+{\lstset{deletecomment=[l]--,
+    #1}
+    \csname\@lst @SetFirstLabel\endcsname%   % chktex 1
+\csname\@lst @SetFirstNumber\endcsname}  % chktex 1
+{\csname\@lst @SaveFirstLabel\endcsname%   % chktex 1
+\csname\@lst @SaveFirstNumber\endcsname}  % chktex 1
+\makeatother
+\lstset{language=Haskell,
+    basicstyle=\small\ttfamily,
+    flexiblecolumns=false,
+    basewidth={0.5em,0.45em},
+    frame=lines,
+    % Keyword styles
+    commentstyle=\color{gray},
+    stringstyle=\color{green!80!darkgray},
+    % Stuff for numbering
+    name=code,
+firstnumber=auto}
+
+% % % % % % % % % % % %
+% Logic abbreviations %
+% % % % % % % % % % % %
+\newcommand{\logic}[1]{\textsf{#1}}
+\newcommand{\IEPDL}{\logic{IE-PDL}}
+\newcommand{\LCCI}{\logic{LCCI}}
+\newcommand{\LCCIhs}{\texttt{LCCI.hs}}
+
+% % % % % %
+% Symbols %
+% % % % % %
+
+% Because I really like \varphi over \phi
+\renewcommand{\phi}{\varphi}
+
+% Aliases
+\newcommand{\lif}{\to}
+\newcommand{\liff}{\leftrightarrow}
+\newcommand{\upd}[1]{\ensuremath{\mathsf{#1}}}
+\newcommand{\proofs}{\vdash}
+\newcommand{\pequiv}{\dashv\vdash}
+
+% Inquisitive Or
+\DeclareMathOperator{\lior}{\rotatebox[origin=c]{270}{$\geqslant$}}
+\DeclareMathOperator*{\biglior}{\scalerel*{\lior}{\bigvee}}
+
+% New operators
+\DeclarePairedDelimiter\lac{[}{]} % chktex 9
+\DeclarePairedDelimiter\liac{\llbracket}{\rrbracket}
+\newcommand{\lup}[2][]{\left[\ifx\relax#1\relax\else\upd{#1}, \fi\upd{#2}\right]}
+
+% Update models
+\newcommand{\U}{\upd{U}}
+\newcommand{\pre}[1]{\upd{pre}(\upd{#1})} % chktex 36
+\newcommand{\sub}[1]{\upd{sub}(\upd{#1})} % chktex 36
+\newcommand{\proj}{\pi}
+
+% % % % % %
+% Images  %
+% % % % % %
+% Tikz
+\tikzstyle{index on}=[inner sep=2pt, white, circle, fill=black]
+\tikzstyle{index off}=[inner sep=2pt, black, circle, draw]
+\tikzstyle{index gray}=[inner sep=2pt, black, circle, fill=lightgray]
+\tikzstyle{uindex gray}=[inner sep=2pt, black, fill=lightgray, rounded corners]
+\tikzstyle{opaque}=[fill=gray,fill opacity=.1]
+\tikzstyle{counter}=[densely dashed]
+
+% Meta-information
+\title{Hexa in \LCCI}
+\author{Ren\'e Mellema}
+\date{Compiled on: \today}
+
+\begin{document}
+\maketitle
+
+\input{Hexa.lhs}
+
+\printbibliography%
+
+\end{document}
